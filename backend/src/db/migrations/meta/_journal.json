@@ -15,6 +15,13 @@
       "when": 1772896472243,
       "tag": "0001_tranquil_true_believers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772907282001,
+      "tag": "0002_complete_living_tribunal",
+      "breakpoints": true
     }
   ]
 }
