@@ -1,0 +1,67 @@
+name: CI
+on:
+    push:
+        branches: [main, dev]
+    pull_request:
+        branches: [main, dev]
+    
+jobs:
+    backend:
+        name: Build Backend
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./backend
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: 22
+                cache: npm
+                cache-dependency-path: ./backend/package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build backend
+              run: npm run build
+
+    worker:
+        name: Build Worker
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./worker
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+            
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: 22
+                cache: npm
+                cache-dependency-path: ./worker/package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build Worker
+              run: npm run build
+
+    docker:
+        name: Build Docker Build
+        runs-on: ubuntu-latest
+        steps: 
+            - name: Checkout code
+              uses: actions/checkout@v4
+            
+            - name: Build backend image
+              run: docker build -t webhook-backend ./backend
+
+            - name: Build worker image
+              run: docker build -t webhook-worker ./worker
