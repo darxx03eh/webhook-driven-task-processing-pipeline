@@ -1,8 +1,9 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
+import { AuthRequest } from "../types/auth-request";
 import { verifyAccessToken } from "../utils/token";
 import { sendErrorResponse } from "../utils/api-response"; 
 
-export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     if(!authHeader || !authHeader.startsWith("Bearer "))
         return sendErrorResponse(res, "Unauthorized", "UNAUTHORIZED", 401);
