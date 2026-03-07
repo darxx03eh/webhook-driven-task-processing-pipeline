@@ -17,8 +17,6 @@ export const pipelines = pgTable("pipelines", {
     userId: uuid("user_id").notNull()
     .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    actionType: text("action_type").notNull(),
-    actionsConfig: jsonb("actions_config"),
     webhookSecret: text("webhook_secret").notNull(),
     createdAt: timestamp("created_at").defaultNow()
 });
@@ -40,6 +38,7 @@ export const jobs = pgTable("jobs", {
     status: text("status").notNull(),
     attempts: integer("attempts").notNull().default(0),
     result: jsonb("result"),
+    stopReason: text("stop_reason"),
     createdAt: timestamp("created_at").defaultNow(),
     processedAt: timestamp("processed_at")
 });
@@ -53,5 +52,15 @@ export const deliveryAttempts = pgTable("delivery_attempts", {
     status: text("status").notNull(),
     responseCode: integer("response_code"),
     attempt: integer("attempt").default(1),
+    createdAt: timestamp("created_at").defaultNow()
+});
+
+export const pipelinesSteps = pgTable("pipelines_steps", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pipelineId: uuid("pipeline_id").notNull()
+    .references(() => pipelines.id, { onDelete: "cascade" }),
+    stepOrder: integer("step_order").notNull(),
+    stepType: text("step_type").notNull(),
+    stepConfig: jsonb("step_config"),
     createdAt: timestamp("created_at").defaultNow()
 });

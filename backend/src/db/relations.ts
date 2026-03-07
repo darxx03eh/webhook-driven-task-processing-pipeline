@@ -1,7 +1,8 @@
 import { relations } from "drizzle-orm";
 import {
     users, pipelines, subscribers,
-    jobs, deliveryAttempts
+    jobs, deliveryAttempts,
+    pipelinesSteps
 } from "./schema";
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -14,7 +15,8 @@ export const pipelinesRelations = relations(pipelines, ({one, many}) => ({
         references: [users.id]
     }),
     subscribers: many(subscribers),
-    jobs: many(jobs)
+    jobs: many(jobs),
+    steps: many(pipelinesSteps)
 }));
 
 export const subscribersRelations = relations(subscribers, ({ one, many }) => ({
@@ -41,5 +43,12 @@ const deliveryAttemptsRelations = relations(deliveryAttempts, ({ one}) => ({
     subscribers: one(subscribers, {
         fields: [deliveryAttempts.subscriberId],
         references: [subscribers.id]
+    })
+}));
+
+export const pipelinesStepsRelations = relations(pipelinesSteps, ({ one }) => ({
+    pipeline: one(pipelines, {
+        fields: [pipelinesSteps.pipelineId],
+        references: [pipelines.id]
     })
 }));
