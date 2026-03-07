@@ -2,11 +2,10 @@ import {
     pgTable, uuid, text, timestamp,
     jsonb, integer
 } from "drizzle-orm/pg-core";
-import { create } from "node:domain";
-import { url } from "node:inspector";
 
 export const users = pgTable("users", {
     id: uuid("id").primaryKey().defaultRandom(),
+    username: text("username").notNull().unique(),
     email: text("email").notNull().unique(),
     passwordHash: text("password_hash").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow()
