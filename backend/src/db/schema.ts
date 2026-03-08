@@ -17,6 +17,7 @@ export const pipelines = pgTable("pipelines", {
     .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     webhookSecret: text("webhook_secret").notNull(),
+    webhookPath: text("webhook_path").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow()
 });
 
