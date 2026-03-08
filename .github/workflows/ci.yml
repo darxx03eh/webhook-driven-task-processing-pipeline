@@ -77,7 +77,7 @@ jobs:
           run: npm run build
 
     docker:
-        name: Build Docker Build
+        name: Build Docker
         runs-on: ubuntu-latest
         steps: 
             - name: Checkout code
