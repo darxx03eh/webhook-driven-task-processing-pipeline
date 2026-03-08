@@ -7,9 +7,9 @@ import {
 import { requireAuth } from "../middleware/auth.middleware";
 import { asyncHandler } from "../utils/async-handler";
 
-const router = Router();
-router.post("/register", asyncHandler(registerHandler));
-router.post("/login", asyncHandler(loginHandler));
-router.get("/me", requireAuth, asyncHandler(meHandler));
+const authRouter = Router();
+authRouter.post("/register", asyncHandler(registerHandler));
+authRouter.post("/login", asyncHandler(loginHandler));
+authRouter.get("/me", requireAuth, asyncHandler(meHandler));
 
-export default router;
+export default authRouter;
