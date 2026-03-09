@@ -1,6 +1,6 @@
 import { AppError } from "../errors/app-error";
-import { createJob } from "../db/repositories/jobs.repository";
-import { findPipelineByWebhookPath } from "../db/repositories/pipelines.repository";
+import { createJob } from "../../../shared/db/repositories/jobs.repository";
+import { findPipelineByWebhookPath } from "../../../shared/db/repositories/pipelines.repository";
 import { verifyWebhookSignature } from "../utils/webhook-signature";
 
 type IngestWebhookInput = {
@@ -32,3 +32,6 @@ export const ingestWebhookService = async (input: IngestWebhookInput) => {
         }
     };
 }
+
+
+

@@ -5,11 +5,12 @@ services:
     container_name: webhook_postgres
     restart: unless-stopped
     env_file:
-      - ./backend/src/db/.env
+      - ./shared/db/.env
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
   backend:
     build:
       context: ./backend
@@ -19,13 +20,17 @@ services:
       - postgres
     env_file:
       - ./backend/.env
+    environment:
+      NODE_PATH: /app/node_modules
     ports:
-      - "3000:3000"   
+      - "3000:3000"
     volumes:
       - ./backend:/app
+      - ./shared:/shared
       - /app/node_modules
+
   worker:
-    build: 
+    build:
       context: ./worker
     container_name: webhook_worker
     restart: unless-stopped
@@ -33,9 +38,13 @@ services:
       - postgres
     env_file:
       - ./worker/.env
+    environment:
+      NODE_PATH: /app/node_modules
     volumes:
       - ./worker:/app
+      - ./shared:/shared
       - /app/node_modules
+
   frontend:
     build:
       context: ./frontend
@@ -50,6 +59,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+
   nginx:
     image: nginx:stable-alpine
     container_name: webhook_nginx
@@ -61,5 +71,6 @@ services:
     depends_on:
       - frontend
       - backend
+
 volumes:
   postgres_data:
