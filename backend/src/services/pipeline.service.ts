@@ -5,8 +5,7 @@ import {
     deletePipelineByIdAndUserId,
     findPipelineByIdAndUserId,
     findPipelinesByUserId
-} from '../db/repositories/pipelines.repository';
-import { pipeline } from 'stream';
+} from '../../../shared/db/repositories/pipelines.repository';
 
 type CreatePipelineInput = {
     userId: string;
@@ -46,3 +45,7 @@ export const deletePipelineService = async (pipelineId: string, userId: string) 
         throw new AppError("Pipeline not found", "PIPELINE_NOT_FOUND", 404);
     return deletedPipeline;
 }
+
+
+
+

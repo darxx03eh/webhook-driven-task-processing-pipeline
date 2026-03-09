@@ -5,7 +5,7 @@ import {
     findPipelineOwnedByUserForSubscribers,
     findSubscriberByIdWithPipeline,
     findSubscribersByPipelineId
-} from "../db/repositories/subscribers.repository"
+} from "../../../shared/db/repositories/subscribers.repository"
 
 type CreateSubscriberInput = {
     pipelineId: string;
@@ -55,3 +55,7 @@ export const deleteSubscriberService = async (subscriberId: string, userId: stri
         throw new AppError("Forbidden", "FORBIDDEN", 403);
     return deleteSubscriberById(subscriberId);
 }
+
+
+
+

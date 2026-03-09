@@ -3,7 +3,7 @@ import {
     createUser, findUserByEmail,
     findUserByUsername,
     findPublicUserById
-} from "../db/repositories/auth.repository";
+} from "../../../shared/db/repositories/auth.repository";
 import { generateAccessToken } from "../utils/token";
 import { AppError } from "../errors/app-error";
 
@@ -67,3 +67,6 @@ export const getCurrentUser = async (userId: string) => {
         throw new AppError("User not found", "USER_NOT_FOUND", 404);
     return user;
 }
+
+
+

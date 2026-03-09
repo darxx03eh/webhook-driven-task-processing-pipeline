@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/backend/src/index.js",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate"
   },
@@ -37,3 +37,4 @@
     "typescript": "^5.9.3"
   }
 }
+

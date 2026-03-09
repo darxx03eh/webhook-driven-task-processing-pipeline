@@ -6,7 +6,7 @@ import {
     findPipelineStepsByPipelineId,
     findStepByIdWithPipeline,
     updatePipelineStepById,
-} from "../db/repositories/pipelines-step.repository";
+} from "../../../shared/db/repositories/pipelines-step.repository";
 
 type CreatePipelineStepInput = {
     pipelineId: string;
@@ -83,4 +83,8 @@ export const deletePipelineStepService = async (stepId: string, userId: string) 
         throw new AppError("Forbidden", "FORBIDDEN", 403);
     return deletePipelineStepById(stepId);  
 }
+
+
+
+
 
