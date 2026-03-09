@@ -6,7 +6,13 @@ import { errorMiddleware } from "./middleware/error.middleware";
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        (req as express.Request & {
+            rawBody?: string
+        }).rawBody = buf.toString("utf-8");
+    } 
+}));
 app.use("/api", router);
 app.use(errorMiddleware);
 app.listen(config.port, () => {

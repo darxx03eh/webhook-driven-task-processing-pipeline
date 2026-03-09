@@ -38,6 +38,7 @@ export const jobs = pgTable("jobs", {
     status: text("status").notNull(),
     attempts: integer("attempts").notNull().default(0),
     result: jsonb("result"),
+    error: text("error"),
     stopReason: text("stop_reason"),
     createdAt: timestamp("created_at").defaultNow(),
     processedAt: timestamp("processed_at")
