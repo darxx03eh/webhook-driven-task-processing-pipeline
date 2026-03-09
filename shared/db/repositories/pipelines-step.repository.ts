@@ -38,7 +38,7 @@ export const createPipelineStep = async (input: CreatePipelineStepInput) => {
 export const findPipelineStepsByPipelineId = async (pipelineId: string) => {
     return db.query.pipelinesSteps.findMany({
         where: eq(pipelinesSteps.pipelineId, pipelineId),
-        orderBy: asc(pipelinesSteps.stepOrder)
+        orderBy: [asc(pipelinesSteps.stepOrder)]
     });
 }
 
