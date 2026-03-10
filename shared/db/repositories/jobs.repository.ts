@@ -1,6 +1,6 @@
 import { db } from "../index";
-import { jobs } from "../schema";
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq, and } from "drizzle-orm";
+import { deliveryAttempts, jobs, pipelines } from "../schema";
 
 type CreateJobInput = {
     pipelineId: string;
@@ -80,4 +80,61 @@ export const markJobFilteredOut = async (
         processedAt: new Date()
     }).where(eq(jobs.id, jobId)).returning();
     return job;
+}
+
+export const findJobsByUserId  = async (userId: string) => {
+    const userPipelines = await db.query.pipelines.findMany({
+        where: eq(pipelines.userId, userId),
+        columns: {
+            id: true
+        }
+    });
+    const pipelineIds = userPipelines.map((pipeline: { id: any; }) => pipeline.id);
+    if(pipelineIds.length === 0) return [];
+    const allJobs = await Promise.all(
+        pipelineIds.map((pipelineId: any) => {
+            return db.query.jobs.findMany({
+                where: eq(jobs.pipelineId, pipelineId),
+                with: {
+                    pipeline: true,
+                    deliveryAttempts: true
+                },
+                orderBy: [desc(jobs.createdAt)]
+            })
+        })
+    );
+    return allJobs.flat().sort((a, b) => {
+        return (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0);
+    });
+}
+
+export const findJobByIdForUser = async (jobId: string, userId: string) => {
+    const job = await db.query.jobs.findFirst({
+        where: eq(jobs.id, jobId),
+        with: {
+            pipeline: true,
+            deliveryAttempts: true
+        }
+    });
+    if(!job) return null;
+    if(job.pipeline.userId !== userId) return null;
+    return job;
+}
+
+export const findJobsByPipelineIdForUser = async (pipelineId: string, userId: string) => {
+    const pipeline = await db.query.pipelines.findFirst({
+        where: and(
+            eq(pipelines.id, pipelineId),
+            eq(pipelines.userId, userId)
+        )
+    });
+    if(!pipeline) return null;
+    const pipelineJobs = await db.query.jobs.findMany({
+        where: eq(jobs.pipelineId, pipelineId),
+        with: {
+            deliveryAttempts: true
+        },
+        orderBy: [desc(jobs.createdAt)]
+    });
+    return pipelineJobs;
 }
