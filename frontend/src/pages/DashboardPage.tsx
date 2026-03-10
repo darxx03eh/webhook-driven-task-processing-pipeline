@@ -177,9 +177,14 @@ export default function DashboardPage() {
 
   const toastError = (error: unknown, fallback: string) => toast("error", getApiErrorMessage(error, fallback));
 
-  const resetStepForm = () => {
+  const getNextStepOrder = () => {
+    if (steps.length === 0) return 1;
+    return Math.max(...steps.map((step) => step.stepOrder)) + 1;
+  };
+
+  const resetStepForm = (stepOrderValue = 1) => {
     setEditingStepId(null);
-    setStepOrder(1);
+    setStepOrder(stepOrderValue);
     setStepType("filter");
     setFilterField("price");
     setFilterOperator(">");
@@ -339,7 +344,7 @@ export default function DashboardPage() {
   };
 
   const openCreateStepDialog = () => {
-    resetStepForm();
+    resetStepForm(getNextStepOrder());
     setActiveDialog("step");
   };
 
@@ -803,6 +808,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 
 
 
