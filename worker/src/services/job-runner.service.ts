@@ -5,6 +5,7 @@ import {
 } from "../../../shared/db/repositories/jobs.repository";
 import { findPipelineStepsByPipelineId } from "../../../shared/db/repositories/pipelines-step.repository";
 import { executePipelineSteps } from "./step-executor.service";
+import { deliverResultToSubscribers } from "./subscriber-delivery.service";
 
 export const runNextPendingJob = async () => {
     const pendingJob = await findPendingJob();
@@ -28,6 +29,11 @@ export const runNextPendingJob = async () => {
             return;
         }
         await markJobCompleted(pendingJob.id, result.payload);
+        await deliverResultToSubscribers({
+            jobId: pendingJob.id,
+            pipelineId: pendingJob.pipelineId,
+            result: result.payload
+        });
         console.log(`[worker] Job completed with id ${pendingJob.id}`);
     } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown worker error";
