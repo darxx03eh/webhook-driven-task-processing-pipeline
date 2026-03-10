@@ -5,7 +5,7 @@ import { pipelines, subscribers } from '../schema';
 type CreateSubscriberInput = {
     pipelineId: string;
     url: string;
-    secret: string | null;
+    secret?: string | null;
 };
 
 export const findPipelineOwnedByUserForSubscribers = async (pipelineId: string, userId: string) => {
