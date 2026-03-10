@@ -7,37 +7,74 @@ type DeliveryResultInput = {
     result: Record<string, unknown>;
 };
 
-export const deliverResultToSubscribers = async (input: DeliveryResultInput) => {
-    const subscribers = await findSubscribersByPipelineId(input.pipelineId);
-    for (const subscriber of subscribers) {
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const RETRY_DELAYS = [0, 5000, 15000];
+
+const deliverToSingleSubscriber = async (
+    jobId: string,
+    pipelineId: string,
+    subscriber: {
+        id: string;
+        url: string;
+        secret?: string | null
+    },
+    result: Record<string, unknown>
+) => {
+    for (let index = 0; index < RETRY_DELAYS.length; index++) {
+        const delay = RETRY_DELAYS[index];
+        const attempt = index + 1;
+        if (delay > 0) await sleep(delay);
         try {
+            console.log(
+                `[worker] Delivery job ${jobId} to subscriber ${subscriber.id}, attempt: ${attempt}`
+            )
             const response = await fetch(subscriber.url, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
+                    "content-type": "application/json",
                 },
                 body: JSON.stringify({
-                    jobId: input.jobId,
-                    pipelineId: input.pipelineId,
-                    result: input.result,
+                    jobId,
+                    pipelineId,
+                    result
                 })
             });
+            const isSuccess = response.ok;
             await createDeliveryAttempt({
-                jobId: input.jobId,
-                subscriberId: subscriber.id,
-                status: response.ok ? "success" : "failed",
+                jobId, subscriberId: subscriber.id,
+                status: isSuccess ? "success" : "failed",
                 responseCode: response.status,
-                attempt: 1
-            })
-        } catch(err) {
-            console.error(`Failed to deliver result to subscriber ${subscriber.id} at ${subscriber.url}:`, err);
+                attempt
+            });
+            if (isSuccess) {
+                console.log(
+                    `[worker] Delivery succeeded for subscriber ${subscriber.id} on attempt: ${attempt}`
+                );
+            } break; // * Stop retrying on success
+        } catch {
             await createDeliveryAttempt({
-                jobId: input.jobId,
-                subscriberId: subscriber.id,
+                jobId, subscriberId: subscriber.id,
                 status: "failed",
                 responseCode: null,
-                attempt: 1
+                attempt
             });
-        }   
+            console.log(
+                `[worker] Delivery failed for subscriber ${subscriber.id} on attempt: ${attempt}`
+            )
+        }
     }
+}
+export const deliverResultToSubscribers = async (input: DeliveryResultInput) => {
+    const subscribers = await findSubscribersByPipelineId(input.pipelineId);
+    for (const subscriber of subscribers)
+        await deliverToSingleSubscriber(
+            input.jobId,
+            input.pipelineId,
+            {
+                id: subscriber.id,
+                url: subscriber.url,
+                secret: subscriber.secret
+            },
+            input.result
+        );
 }
