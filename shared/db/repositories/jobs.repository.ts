@@ -1,5 +1,5 @@
 import { db } from "../index";
-import { asc, desc, eq, and } from "drizzle-orm";
+import { asc, desc, eq, and, sql } from "drizzle-orm";
 import { deliveryAttempts, jobs, pipelines } from "../schema";
 
 type CreateJobInput = {
@@ -9,12 +9,12 @@ type CreateJobInput = {
 
 export const createJob = async (input: CreateJobInput) => {
     const [job] = await db.insert(jobs)
-    .values({
-        pipelineId: input.pipelineId,
-        payload: input.payload,
-        status: "pending",
-        attempts: 0
-    }).returning();
+        .values({
+            pipelineId: input.pipelineId,
+            payload: input.payload,
+            status: "pending",
+            attempts: 0
+        }).returning();
     return job;
 }
 
@@ -33,8 +33,8 @@ export const findPendingJob = async () => {
 
 export const markJobProcessing = async (jobId: string) => {
     const [job] = await db.update(jobs)
-    .set({ status: "processing"}).where(eq(jobs.id, jobId))
-    .returning();
+        .set({ status: "processing" }).where(eq(jobs.id, jobId))
+        .returning();
     return job;
 }
 
@@ -43,13 +43,13 @@ export const markJobCompleted = async (
     result: Record<string, unknown>
 ) => {
     const [job] = await db.update(jobs)
-    .set({
-        status: "completed",
-        result,
-        error: null,
-        stopReason: null,
-        processedAt: new Date()
-    }).where(eq(jobs.id, jobId)).returning();
+        .set({
+            status: "completed",
+            result,
+            error: null,
+            stopReason: null,
+            processedAt: new Date()
+        }).where(eq(jobs.id, jobId)).returning();
     return job;
 }
 
@@ -58,11 +58,11 @@ export const markJobFailed = async (
     errorMessage: string
 ) => {
     const [job] = await db.update(jobs)
-    .set({
-        status: "failed",
-        error: errorMessage,
-        processedAt: new Date()
-    }).where(eq(jobs.id, jobId)).returning();
+        .set({
+            status: "failed",
+            error: errorMessage,
+            processedAt: new Date()
+        }).where(eq(jobs.id, jobId)).returning();
     return job;
 }
 
@@ -72,17 +72,17 @@ export const markJobFilteredOut = async (
     stopReason: string
 ) => {
     const [job] = await db.update(jobs)
-    .set({
-        status: "filtered_out",
-        result,
-        stopReason,
-        error: null,
-        processedAt: new Date()
-    }).where(eq(jobs.id, jobId)).returning();
+        .set({
+            status: "filtered_out",
+            result,
+            stopReason,
+            error: null,
+            processedAt: new Date()
+        }).where(eq(jobs.id, jobId)).returning();
     return job;
 }
 
-export const findJobsByUserId  = async (userId: string) => {
+export const findJobsByUserId = async (userId: string) => {
     const userPipelines = await db.query.pipelines.findMany({
         where: eq(pipelines.userId, userId),
         columns: {
@@ -90,7 +90,7 @@ export const findJobsByUserId  = async (userId: string) => {
         }
     });
     const pipelineIds = userPipelines.map((pipeline: { id: any; }) => pipeline.id);
-    if(pipelineIds.length === 0) return [];
+    if (pipelineIds.length === 0) return [];
     const allJobs = await Promise.all(
         pipelineIds.map((pipelineId: any) => {
             return db.query.jobs.findMany({
@@ -116,8 +116,8 @@ export const findJobByIdForUser = async (jobId: string, userId: string) => {
             deliveryAttempts: true
         }
     });
-    if(!job) return null;
-    if(job.pipeline.userId !== userId) return null;
+    if (!job) return null;
+    if (job.pipeline.userId !== userId) return null;
     return job;
 }
 
@@ -128,7 +128,7 @@ export const findJobsByPipelineIdForUser = async (pipelineId: string, userId: st
             eq(pipelines.userId, userId)
         )
     });
-    if(!pipeline) return null;
+    if (!pipeline) return null;
     const pipelineJobs = await db.query.jobs.findMany({
         where: eq(jobs.pipelineId, pipelineId),
         with: {
@@ -138,3 +138,34 @@ export const findJobsByPipelineIdForUser = async (pipelineId: string, userId: st
     });
     return pipelineJobs;
 }
+
+/**
+    * Atomically finds the next pending job and marks it as processing.
+    * This is used by the worker to claim a job for processing.
+    * The implementation should ensure that multiple workers can call this function concurrently without claiming the same job.
+ */
+export const claimNextPendingJob = async () => {
+    return db.transaction(async (tx) => {
+        const result = await tx.execute(sql<{ id: string }>`
+            UPDATE ${jobs}
+            SET
+                status = 'processing',
+                updated_at = NOW()
+            WHERE id = (
+                SELECT id
+                FROM ${jobs}
+                WHERE status = 'pending'
+                ORDER BY created_at ASC
+                FOR UPDATE SKIP LOCKED
+                LIMIT 1
+            )
+            RETURNING id
+            `);
+        const claimedJobId = result.rows[0]?.id as string | undefined;
+        if (!claimedJobId) return null;
+        return tx.query.jobs.findFirst({
+            where: eq(jobs.id, claimedJobId)
+        });
+    });
+}
+

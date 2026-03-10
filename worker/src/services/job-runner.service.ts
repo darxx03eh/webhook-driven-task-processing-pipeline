@@ -1,25 +1,28 @@
 import {
     findPendingJob, markJobCompleted,
     markJobFailed, markJobFilteredOut,
-    markJobProcessing
+    markJobProcessing, claimNextPendingJob
 } from "../../../shared/db/repositories/jobs.repository";
 import { findPipelineStepsByPipelineId } from "../../../shared/db/repositories/pipelines-step.repository";
 import { executePipelineSteps } from "./step-executor.service";
 import { deliverResultToSubscribers } from "./subscriber-delivery.service";
 
 export const runNextPendingJob = async () => {
-    const pendingJob = await findPendingJob();
+    // const pendingJob = await findPendingJob();
+    // if (!pendingJob) return;
+    // console.log(`[worker] Found pending job with id ${pendingJob.id}`);
+    // await markJobProcessing(pendingJob.id);
+    const pendingJob = await claimNextPendingJob();
     if (!pendingJob) return;
-    console.log(`[worker] Found pending job with id ${pendingJob.id}`);
-    await markJobProcessing(pendingJob.id);
+    console.log(`[worker] Claimed pending job with id ${pendingJob.id}`);
     try {
         const steps = await findPipelineStepsByPipelineId(pendingJob.pipelineId);
-        const payload = 
-        pendingJob.payload && typeof pendingJob.payload === "object"
-        ? (pendingJob.payload as Record<string, unknown>)
-        : {};
+        const payload =
+            pendingJob.payload && typeof pendingJob.payload === "object"
+                ? (pendingJob.payload as Record<string, unknown>)
+                : {};
         const result = await executePipelineSteps(payload, steps);
-        if(result.stopped) {
+        if (result.stopped) {
             await markJobFilteredOut(
                 pendingJob.id,
                 result.payload,

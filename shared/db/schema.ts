@@ -41,6 +41,7 @@ export const jobs = pgTable("jobs", {
     error: text("error"),
     stopReason: text("stop_reason"),
     createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
     processedAt: timestamp("processed_at")
 });
 
