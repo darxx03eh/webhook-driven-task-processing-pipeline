@@ -84,10 +84,10 @@ jobs:
               uses: actions/checkout@v4
             
             - name: Build backend image
-              run: docker build -t webhook-backend ./backend
+              run: docker build -t webhook-backend -f backend/Dockerfile .
 
             - name: Build worker image
-              run: docker build -t webhook-worker ./worker
+              run: docker build -t webhook-worker -f worker/Dockerfile .
 
-            - name: Build frontend image
-              run: docker build -t webhook-frontend ./frontend
+            - name: Build nginx image (serves frontend)
+              run: docker build -t webhook-nginx -f nginx/Dockerfile .
