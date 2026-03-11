@@ -7,6 +7,7 @@ RUN cd backend && npm ci
 
 COPY shared ./shared
 COPY backend/tsconfig.json ./backend/tsconfig.json
+COPY backend/drizzle.config.ts ./backend/drizzle.config.ts
 COPY backend/src ./backend/src
 
 WORKDIR /app/backend
