@@ -1,3 +1,5 @@
+![Tests](https://github.com/darxx03eh/webhook-driven-task-processing-pipeline/actions/workflows/ci.yml/badge.svg)
+![Tests](https://github.com/darxx03eh/webhook-driven-task-processing-pipeline/actions/workflows/cd.yml/badge.svg)
 # Webhook-Driven Task Processing Pipeline
 
 A production-style webhook processing platform built with TypeScript, PostgreSQL, Docker, and GitHub Actions.
