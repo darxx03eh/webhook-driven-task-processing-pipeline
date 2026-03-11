@@ -2,10 +2,14 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+COPY worker/package*.json ./worker/
+RUN cd worker && npm ci
 
-COPY tsconfig.json ./
-COPY src ./src
+COPY shared ./shared
+COPY worker/tsconfig.json ./worker/tsconfig.json
+COPY worker/src ./worker/src
 
-CMD [ "npm", "run", "dev" ]
+WORKDIR /app/worker
+RUN npm run build
+
+CMD ["npm", "run", "start"]
