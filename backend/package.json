@@ -9,7 +9,7 @@
     "build": "tsc",
     "start": "node dist/backend/src/index.js",
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate"
+    "migrate": "drizzle-kit migrate --config=drizzle.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -37,4 +37,5 @@
     "typescript": "^5.9.3"
   }
 }
+
 
