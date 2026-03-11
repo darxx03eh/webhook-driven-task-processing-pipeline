@@ -1,0 +1,62 @@
+name: CD - Deploy Stack on EC2
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            worker/package-lock.json
+
+      - name: Install and build backend
+        working-directory: ./backend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install and build worker
+        working-directory: ./worker
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install and build frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Create runtime env files
+        run: |
+          printf "%s" "${{ secrets.PROD_DB_ENV }}" > ./shared/db/.env
+          printf "%s" "${{ secrets.PROD_BACKEND_ENV }}" > ./backend/.env
+          printf "%s" "${{ secrets.PROD_WORKER_ENV }}" > ./worker/.env
+          printf "%s" "${{ secrets.PROD_FRONTEND_ENV }}" > ./frontend/.env
+
+      - name: Deploy with Docker Compose
+        run: |
+          docker compose pull || true
+          docker compose up -d --build --remove-orphans
