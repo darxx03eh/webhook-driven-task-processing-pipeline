@@ -22,6 +22,8 @@ Incoming webhooks are accepted asynchronously (`202 Accepted`), stored as jobs, 
 - [Webhook Signature](#webhook-signature)
 - [Worker Flow and Reliability](#worker-flow-and-reliability)
 - [CI Pipeline](#ci-pipeline)
+- [CD Pipeline](#cd-pipeline)
+- [Domain and HTTPS](#domain-and-https)
 - [Design Decisions](#design-decisions)
 - [Troubleshooting](#troubleshooting)
 
@@ -385,5 +387,92 @@ Verify:
 - step order is correct,
 - step config matches validator rules.
 
+
+## CD Pipeline
+GitHub Actions workflow: `.github/workflows/cd.yml`
+
+On push to `main`, CD runs on `self-hosted` runner (EC2) and performs:
+- Checkout repository
+- Create runtime env files from GitHub Secrets
+- Deploy with Docker Compose (`docker compose up -d --build --remove-orphans`)
+- Print running containers (`docker compose ps`)
+
+### Required GitHub Secrets
+- `PROD_DB_ENV`
+- `PROD_BACKEND_ENV`
+- `PROD_WORKER_ENV`
+- `PROD_FRONTEND_ENV`
+
+Example values:
+
+`PROD_DB_ENV`
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=webhook_pipeline
+```
+
+`PROD_BACKEND_ENV`
+```env
+PORT=3000
+DATABASE_URL=postgres://postgres:postgres@postgres:5432/webhook_pipeline
+JWT_SECRET=change_me
+JWT_ISSUER=webhook-pipeline
+JWT_AUDIENCE=webhook-pipeline-users
+JWT_EXPIRATION=7d
+```
+
+`PROD_WORKER_ENV`
+```env
+DATABASE_URL=postgres://postgres:postgres@postgres:5432/webhook_pipeline
+WORKER_POLL_INTERVAL_MS=5000
+```
+
+`PROD_FRONTEND_ENV`
+```env
+VITE_API_BASE_URL=/api
+```
+
+Notes:
+- In Docker, DB host must be `postgres` (not `localhost`).
+- If DB credentials were changed after first run, recreate DB volume:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+## Domain and HTTPS
+Configured production domain:
+- `darawsheh.dev`
+- `www.darawsheh.dev`
+
+DNS records used (Name.com):
+- `A` record: `darawsheh.dev -> 100.27.217.58`
+- `CNAME` record: `www.darawsheh.dev -> darawsheh.dev`
+
+Let's Encrypt command used:
+
+```bash
+sudo certbot certonly --standalone \
+  -d darawsheh.dev -d www.darawsheh.dev \
+  --agree-tos -m your-email@example.com --non-interactive
+```
+
+Nginx production behavior:
+- Redirects HTTP (80) to HTTPS (443)
+- Serves frontend static files
+- Proxies API requests from `/api` to backend (`backend:3000`)
+
+Additional checks:
+
+```bash
+docker compose ps
+docker compose logs --tail=120 backend
+docker compose logs --tail=120 nginx
+```
 ## License
 For internship/project evaluation use.
+
+
+
