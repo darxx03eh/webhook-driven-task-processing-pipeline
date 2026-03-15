@@ -25,7 +25,17 @@ jobs:
           printf "%s" "${{ secrets.PROD_WORKER_ENV }}" > ./worker/.env
           printf "%s" "${{ secrets.PROD_FRONTEND_ENV }}" > ./frontend/.env
 
+      - name: Reclaim Docker disk space
+        run: |
+          docker system df || true
+          docker builder prune -af || true
+          docker image prune -af || true
+          docker container prune -f || true
+          docker system df || true
+
       - name: Deploy with Docker Compose
+        env:
+          COMPOSE_BAKE: "false"
         run: |
           docker compose up -d --build --remove-orphans
 

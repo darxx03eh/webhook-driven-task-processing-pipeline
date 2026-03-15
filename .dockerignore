@@ -1,0 +1,33 @@
+# Git
+.git/
+.gitignore
+
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Build output and caches
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+**/coverage/
+.vite/
+**/.vite/
+.npm/
+
+# Logs and temp
+*.log
+logs/
+tmp/
+.tmp/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+**/junit.xml
