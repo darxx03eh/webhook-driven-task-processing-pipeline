@@ -1,6 +1,7 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerRequest } from "../api/auth.api";
+import { buildRateLimitMessage, getApiErrorMessage, getRetryAfterSeconds } from "../utils/api-error";
 import { saveToken } from "../utils/token";
 import "../assets/css/auth.css";
 
@@ -13,14 +14,26 @@ export default function RegisterPage() {
     });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [rateLimitSecondsLeft, setRateLimitSecondsLeft] = useState(0);
+
+    useEffect(() => {
+        if (rateLimitSecondsLeft <= 0) return;
+        const timer = window.setInterval(() => {
+            setRateLimitSecondsLeft((previous) => (previous > 0 ? previous - 1 : 0));
+        }, 1000);
+        return () => window.clearInterval(timer);
+    }, [rateLimitSecondsLeft]);
+
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         setFormData((prev) => ({
             ...prev,
             [e.target.name]: e.target.value,
         }));
     }
+
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
+        if (rateLimitSecondsLeft > 0) return;
         setError("");
         setLoading(true);
         try {
@@ -30,12 +43,20 @@ export default function RegisterPage() {
                 saveToken(token);
                 navigate("/dashboard");
             }
-        } catch (err: any) {
-            setError(err?.response?.data?.message || "Registration failed");
+        } catch (err: unknown) {
+            const retryAfter = getRetryAfterSeconds(err);
+            if (retryAfter) {
+                setRateLimitSecondsLeft(retryAfter);
+            }
+            const fallback = buildRateLimitMessage("Too many registration attempts.", retryAfter);
+            setError(getApiErrorMessage(err, fallback || "Registration failed"));
         } finally {
             setLoading(false);
         }
     }
+
+    const submitDisabled = loading || rateLimitSecondsLeft > 0;
+
     return (
         <div className="auth-layout">
             <section className="auth-brand">
@@ -121,8 +142,8 @@ export default function RegisterPage() {
                                 onChange={handleChange}
                             />
                         </div>
-                        <button className="auth-button" type="submit" disabled={loading}>
-                            {loading ? "Creating account..." : "Register"}
+                        <button className="auth-button" type="submit" disabled={submitDisabled}>
+                            {loading ? "Creating account..." : rateLimitSecondsLeft > 0 ? `Try again in ${rateLimitSecondsLeft}s` : "Register"}
                         </button>
                     </form>
                     {error && <p className="auth-error">{error}</p>}

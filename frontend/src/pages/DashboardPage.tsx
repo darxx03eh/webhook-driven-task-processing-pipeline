@@ -30,7 +30,7 @@ import {
   type Job,
 } from "../api/jobs.api";
 import { ingestWebhookRequest } from "../api/webhooks.api";
-import { getApiErrorMessage } from "../utils/api-error";
+import { buildRateLimitMessage, getApiErrorMessage, getRetryAfterSeconds } from "../utils/api-error";
 import { removeToken } from "../utils/token";
 import "../assets/css/dashboard.css";
 
@@ -158,6 +158,7 @@ export default function DashboardPage() {
     { id: uid(), key: "ip", value: "8.8.8.8" },
   ]);
   const [webhookSignature, setWebhookSignature] = useState("");
+  const [webhookRateLimitSecondsLeft, setWebhookRateLimitSecondsLeft] = useState(0);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [confirmState, setConfirmState] = useState<ConfirmState>({ open: false, title: "", message: "", confirmLabel: "Confirm" });
@@ -293,6 +294,14 @@ export default function DashboardPage() {
   useEffect(() => {
     loadDashboard();
   }, []);
+
+  useEffect(() => {
+    if (webhookRateLimitSecondsLeft <= 0) return;
+    const timer = window.setInterval(() => {
+      setWebhookRateLimitSecondsLeft((previous) => (previous > 0 ? previous - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [webhookRateLimitSecondsLeft]);
   useEffect(() => {
     if (!selectedPipelineId) {
       setSelectedPipelineDetails(null);
@@ -448,6 +457,7 @@ export default function DashboardPage() {
     if (steps.length === 0) return toast("error", "Add at least one step first.");
     if (subscribers.length === 0) return toast("error", "Add at least one subscriber first.");
     if (!webhookSignature.trim()) return toast("error", "X-Signature is required.");
+    if (webhookRateLimitSecondsLeft > 0) return toast("error", `Webhook is rate limited. Try again in ${webhookRateLimitSecondsLeft}s.`);
 
     const payloadText = buildWebhookPayloadText();
     if (payloadText === "{}") return toast("error", "Add at least one payload field.");
@@ -462,7 +472,11 @@ export default function DashboardPage() {
       await refreshJobsOnly();
       setActiveDialog(null);
     } catch (error) {
-      toastError(error, "Failed to send webhook.");
+      const retryAfter = getRetryAfterSeconds(error);
+      if (retryAfter) {
+        setWebhookRateLimitSecondsLeft(retryAfter);
+      }
+      toast("error", getApiErrorMessage(error, buildRateLimitMessage("Too many webhook attempts.", retryAfter)));
     } finally {
       setWorking(false);
     }
@@ -721,7 +735,7 @@ export default function DashboardPage() {
             <form className="dashboard-form" onSubmit={handleSendWebhook}>
               <div className="step-block-card"><div className="step-block-head"><h4>Payload Fields</h4><button type="button" className="dashboard-btn dashboard-btn-ghost" onClick={addWebhookPayloadRow}>Add Field</button></div><div className="step-row-grid step-row-grid-add">{webhookPayloadRows.map((row) => <div key={row.id} className="step-row-item"><input className="dashboard-input" value={row.key} onChange={(event) => updateWebhookPayloadRow(row.id, { key: event.target.value })} placeholder="field" /><input className="dashboard-input" value={row.value} onChange={(event) => updateWebhookPayloadRow(row.id, { value: event.target.value })} placeholder="value" /><button type="button" className="dashboard-danger-link" onClick={() => removeWebhookPayloadRow(row.id)}>Remove</button></div>)}</div></div>
               <label>X-Signature<input className="dashboard-input dashboard-mono" value={webhookSignature} onChange={(event) => setWebhookSignature(event.target.value)} placeholder="hex signature" /></label>
-              <div className="dashboard-actions-row"><button className="dashboard-btn dashboard-btn-ghost" type="button" onClick={handleGenerateSignature} disabled={!selectedPipelineDetails}>Generate from Secret</button><button className="dashboard-btn" type="submit" disabled={working || !selectedPipelineDetails || steps.length === 0 || subscribers.length === 0}>Send Webhook</button></div>
+              <div className="dashboard-actions-row"><button className="dashboard-btn dashboard-btn-ghost" type="button" onClick={handleGenerateSignature} disabled={!selectedPipelineDetails}>Generate from Secret</button><button className="dashboard-btn" type="submit" disabled={working || webhookRateLimitSecondsLeft > 0 || !selectedPipelineDetails || steps.length === 0 || subscribers.length === 0}>{webhookRateLimitSecondsLeft > 0 ? `Rate limited (${webhookRateLimitSecondsLeft}s)` : "Send Webhook"}</button></div>
             </form>
           </div>
         </div>
@@ -808,6 +822,9 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
 
 
 

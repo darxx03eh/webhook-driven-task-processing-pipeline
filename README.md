@@ -36,6 +36,7 @@ Incoming webhooks are accepted asynchronously (`202 Accepted`), stored as jobs, 
 - Subscriber management (create/list/delete).
 - Public webhook ingestion endpoint per pipeline (`/api/webhooks/:webhookPath`).
 - Webhook HMAC signature verification (`X-Signature`, SHA-256).
+- Rate limiting for auth and webhook ingestion endpoints.
 - Async job queue backed by PostgreSQL.
 - Dedicated worker process for background execution.
 - Three step types:
@@ -120,6 +121,10 @@ JWT_SECRET=change_me
 JWT_ISSUER=webhook-pipeline
 JWT_AUDIENCE=webhook-pipeline-users
 JWT_EXPIRATION=7d
+RATE_LIMIT_AUTH_WINDOW_MS=120000
+RATE_LIMIT_AUTH_MAX_REQUESTS=5
+RATE_LIMIT_WEBHOOK_WINDOW_MS=120000
+RATE_LIMIT_WEBHOOK_MAX_REQUESTS=30
 ```
 
 ### `worker/.env`
@@ -317,6 +322,23 @@ Pseudo formula:
 signature = HMAC_SHA256_HEX(webhookSecret, rawBody)
 ```
 
+## Rate Limiting
+Two scopes are rate limited with in-memory counters per client IP:
+
+- Auth endpoints (`POST /auth/register`, `POST /auth/login`)
+- Webhook ingestion (`POST /api/webhooks/:webhookPath`)
+
+Response behavior when exceeded:
+- HTTP `429 Too Many Requests`
+- `Retry-After` header (seconds)
+- `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` headers
+
+Tune via backend env vars:
+- `RATE_LIMIT_AUTH_WINDOW_MS` (default `120000`)
+- `RATE_LIMIT_AUTH_MAX_REQUESTS` (default `5`)
+- `RATE_LIMIT_WEBHOOK_WINDOW_MS` (default `120000`)
+- `RATE_LIMIT_WEBHOOK_MAX_REQUESTS` (default `30`)
+
 ## Worker Flow and Reliability
 Worker loop:
 1. Claim next pending job atomically.
@@ -422,6 +444,10 @@ JWT_SECRET=change_me
 JWT_ISSUER=webhook-pipeline
 JWT_AUDIENCE=webhook-pipeline-users
 JWT_EXPIRATION=7d
+RATE_LIMIT_AUTH_WINDOW_MS=120000
+RATE_LIMIT_AUTH_MAX_REQUESTS=5
+RATE_LIMIT_WEBHOOK_WINDOW_MS=120000
+RATE_LIMIT_WEBHOOK_MAX_REQUESTS=30
 ```
 
 `PROD_WORKER_ENV`
@@ -475,6 +501,12 @@ docker compose logs --tail=120 nginx
 ```
 ## License
 For internship/project evaluation use.
+
+
+
+
+
+
 
 
 
