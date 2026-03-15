@@ -41,7 +41,7 @@ jobs:
           docker system df || true
           df -h || true
 
-      - name: Build images sequentially to reduce disk pressure
+      - name: Build core images only
         env:
           COMPOSE_BAKE: "false"
           COMPOSE_PARALLEL_LIMIT: "1"
@@ -49,15 +49,13 @@ jobs:
           docker compose build backend
           docker builder prune -f || true
           docker compose build worker
-          docker builder prune -f || true
-          docker compose build nginx
 
-      - name: Start services
+      - name: Start core services
         env:
           COMPOSE_BAKE: "false"
           COMPOSE_PARALLEL_LIMIT: "1"
         run: |
-          docker compose up -d --remove-orphans
+          docker compose up -d --remove-orphans postgres backend worker
 
       - name: Show running services
         run: docker compose ps
