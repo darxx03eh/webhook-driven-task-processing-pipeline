@@ -48,6 +48,7 @@ Incoming webhooks are accepted asynchronously (`202 Accepted`), stored as jobs, 
 - Frontend dashboard (React) for complete flow management.
 - Docker Compose environment for full stack.
 - GitHub Actions CI for backend, worker, frontend, and Docker image builds.
+- Metrics snapshot API + dashboard cards (queue health, latencies, delivery success).
 
 ## Architecture
 ```mermaid
@@ -287,6 +288,10 @@ Returns `202 Accepted` and a queued `job`.
 
 Each job includes status and related delivery attempts.
 
+### Metrics (Auth required)
+#### `GET /metrics`
+Returns counters, duration aggregates, and queue gauges for dashboard monitoring.
+
 ## Step Types and stepConfig
 The backend validates step config strictly by `stepType`.
 
@@ -334,10 +339,20 @@ Response behavior when exceeded:
 - `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` headers
 
 Tune via backend env vars:
-- `RATE_LIMIT_AUTH_WINDOW_MS` (default `120000`)
-- `RATE_LIMIT_AUTH_MAX_REQUESTS` (default `5`)
-- `RATE_LIMIT_WEBHOOK_WINDOW_MS` (default `120000`)
-- `RATE_LIMIT_WEBHOOK_MAX_REQUESTS` (default `30`)
+- `RATE_LIMIT_AUTH_WINDOW_MS` (default `60000`)
+- `RATE_LIMIT_AUTH_MAX_REQUESTS` (default `10`)
+- `RATE_LIMIT_WEBHOOK_WINDOW_MS` (default `60000`)
+- `RATE_LIMIT_WEBHOOK_MAX_REQUESTS` (default `60`)
+
+## Metrics Snapshot
+The backend exposes `GET /api/metrics` (auth required) for operational visibility.
+
+Returned groups:
+- `counters`: webhook/job/delivery totals and retry/failure counters
+- `durations`: count/sum/avg for webhook ingestion, HTTP requests, job processing, and delivery attempts
+- `gauges`: pending/processing queue size and oldest pending job age
+
+The frontend dashboard consumes this endpoint and renders real-time metric cards.
 
 ## Worker Flow and Reliability
 Worker loop:
@@ -501,6 +516,8 @@ docker compose logs --tail=120 nginx
 ```
 ## License
 For internship/project evaluation use.
+
+
 
 
 

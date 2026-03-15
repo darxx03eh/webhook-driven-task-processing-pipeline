@@ -5,6 +5,7 @@ import pipelineStepRouter from "./pipeline-step.routes";
 import webhookRouter from "./webhook.routes";
 import subscriberRouter from "./subscriber.routes";
 import jobRouter from "./job.routes";
+import metricsRouter from "./metrics.routes";
 
 const router = Router();
 router.use("/auth", authRouter);
@@ -13,10 +14,11 @@ router.use("/", pipelineStepRouter);
 router.use("/", subscriberRouter);
 router.use("/", webhookRouter);
 router.use("/", jobRouter);
-router.get("/health", (req, res, next) => {
+router.use("/", metricsRouter);
+router.get("/health", (req, res) => {
     res.json({
         status: "ok"
     });
-})
+});
 
 export default router;

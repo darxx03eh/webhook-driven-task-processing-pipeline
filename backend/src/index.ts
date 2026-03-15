@@ -3,6 +3,7 @@ import cors from "cors";
 import router from "./routes/index";
 import { config } from "./config/env";
 import { errorMiddleware } from "./middleware/error.middleware";
+import { requestMetricsMiddleware } from "./middleware/request-metrics.middleware";
 
 const app = express();
 app.use(cors());
@@ -11,8 +12,9 @@ app.use(express.json({
         (req as express.Request & {
             rawBody?: string
         }).rawBody = buf.toString("utf-8");
-    } 
+    }
 }));
+app.use(requestMetricsMiddleware);
 app.use("/api", router);
 app.use(errorMiddleware);
 app.listen(config.port, () => {
