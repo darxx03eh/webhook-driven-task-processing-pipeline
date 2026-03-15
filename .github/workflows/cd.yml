@@ -25,27 +25,37 @@ jobs:
           printf "%s" "${{ secrets.PROD_WORKER_ENV }}" > ./worker/.env
           printf "%s" "${{ secrets.PROD_FRONTEND_ENV }}" > ./frontend/.env
 
-      - name: Stop current stack (keep volumes)
+      - name: Stop current stack and remove project images only
         env:
           COMPOSE_BAKE: "false"
         run: |
-          docker compose down --remove-orphans || true
+          docker compose down --remove-orphans --rmi local || true
 
-      - name: Reclaim Docker disk space
+      - name: Reclaim build cache (safe)
         run: |
           df -h || true
           docker system df || true
-          docker builder prune -af || true
-          docker image prune -af || true
+          docker builder prune -f || true
+          docker image prune -f || true
           docker container prune -f || true
           docker system df || true
           df -h || true
 
-      - name: Deploy with Docker Compose
+      - name: Build images sequentially to reduce disk pressure
         env:
           COMPOSE_BAKE: "false"
+          COMPOSE_PARALLEL_LIMIT: "1"
         run: |
-          docker compose up -d --build --remove-orphans
+          docker compose build backend
+          docker compose build worker
+          docker compose build nginx
+
+      - name: Start services
+        env:
+          COMPOSE_BAKE: "false"
+          COMPOSE_PARALLEL_LIMIT: "1"
+        run: |
+          docker compose up -d --remove-orphans
 
       - name: Show running services
         run: docker compose ps
