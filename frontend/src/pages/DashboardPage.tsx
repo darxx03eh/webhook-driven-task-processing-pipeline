@@ -30,6 +30,7 @@ import {
   type Job,
 } from "../api/jobs.api";
 import { ingestWebhookRequest } from "../api/webhooks.api";
+import { getMetricsSnapshotRequest, type MetricsSnapshot } from "../api/metrics.api";
 import { buildRateLimitMessage, getApiErrorMessage, getRetryAfterSeconds } from "../utils/api-error";
 import { removeToken } from "../utils/token";
 import "../assets/css/dashboard.css";
@@ -73,6 +74,12 @@ const humanizeKey = (key: string) =>
     .replace(/_/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/^./, (c) => c.toUpperCase());
+
+const formatDurationMs = (value: number | undefined) => {
+  if (!value || !Number.isFinite(value)) return "-";
+  if (value < 1000) return `${Math.round(value)} ms`;
+  return `${(value / 1000).toFixed(2)} s`;
+};
 
 const formatSimpleValue = (value: unknown): string => {
   if (value === null || value === undefined) return "-";
@@ -132,6 +139,7 @@ export default function DashboardPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [focusedJob, setFocusedJob] = useState<Job | null>(null);
+  const [metrics, setMetrics] = useState<MetricsSnapshot | null>(null);
   const [webhookDoneMap, setWebhookDoneMap] = useState<Record<string, boolean>>({});
 
   const [newPipelineName, setNewPipelineName] = useState("");
@@ -269,6 +277,15 @@ export default function DashboardPage() {
     }
   };
 
+  const loadMetricsOnly = async () => {
+    try {
+      const snapshot = await getMetricsSnapshotRequest();
+      setMetrics(snapshot);
+    } catch (error) {
+      toastError(error, "Failed to refresh metrics.");
+    }
+  };
+
   const refreshJobsOnly = async () => {
     try {
       const list = selectedPipelineId ? await getPipelineJobsRequest(selectedPipelineId) : await getJobsRequest();
@@ -280,11 +297,12 @@ export default function DashboardPage() {
 
   const loadDashboard = async () => {
     try {
-      const [me, pipelineList, allJobs] = await Promise.all([meRequest(), getPipelinesRequest(), getJobsRequest()]);
+      const [me, pipelineList, allJobs, metricsSnapshot] = await Promise.all([meRequest(), getPipelinesRequest(), getJobsRequest(), getMetricsSnapshotRequest()]);
       setUser(me.data.user as User);
       setPipelines(pipelineList);
       setJobs(allJobs);
       if (pipelineList.length > 0) setSelectedPipelineId(pipelineList[0].id);
+      setMetrics(metricsSnapshot);
     } catch (error) {
       toastError(error, "Failed to load dashboard data.");
     } finally {
@@ -564,6 +582,21 @@ export default function DashboardPage() {
           <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Jobs</p><h3>{jobs.length}</h3><span>Recent execution history</span></article>
         </section>
 
+        <section className="dashboard-card">
+          <div className="dashboard-inline-head">
+            <h2>Metrics Snapshot</h2>
+            <button className="dashboard-btn dashboard-btn-ghost" onClick={loadMetricsOnly}>Refresh Metrics</button>
+          </div>
+          <div className="dashboard-grid dashboard-grid-stats">
+            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Pending Jobs</p><h3>{metrics?.gauges.jobs_pending_gauge ?? 0}</h3><span>Queue health</span></article>
+            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Processing Jobs</p><h3>{metrics?.gauges.jobs_processing_gauge ?? 0}</h3><span>Currently running</span></article>
+            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Oldest Pending</p><h3>{metrics ? `${Math.round(metrics.gauges.oldest_pending_job_age_seconds)}s` : "-"}</h3><span>Backlog age</span></article>
+            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Webhook Avg Latency</p><h3>{formatDurationMs(metrics?.durations.webhook_ingest_duration_ms.avgMs)}</h3><span>Ingestion duration</span></article>
+            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Job Avg Duration</p><h3>{formatDurationMs(metrics?.durations.job_processing_duration_ms.avgMs)}</h3><span>Processing duration</span></article>
+            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Delivery Success Rate</p><h3>{metrics && metrics.counters.deliveries_attempted_total > 0 ? `${Math.round((metrics.counters.deliveries_success_total / metrics.counters.deliveries_attempted_total) * 100)}%` : "-"}</h3><span>{metrics ? `${metrics.counters.deliveries_success_total}/${metrics.counters.deliveries_attempted_total} attempts` : "No attempts yet"}</span></article>
+          </div>
+        </section>
+
         <section className="dashboard-grid dashboard-grid-main">
           <article className="dashboard-card">
             <h2>My Pipelines</h2>
@@ -822,6 +855,9 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
 
 
 
