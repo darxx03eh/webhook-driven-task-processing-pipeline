@@ -47,7 +47,9 @@ jobs:
           COMPOSE_PARALLEL_LIMIT: "1"
         run: |
           docker compose build backend
+          docker builder prune -f || true
           docker compose build worker
+          docker builder prune -f || true
           docker compose build nginx
 
       - name: Start services
