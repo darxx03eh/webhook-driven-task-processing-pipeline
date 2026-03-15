@@ -25,12 +25,6 @@ jobs:
           printf "%s" "${{ secrets.PROD_WORKER_ENV }}" > ./worker/.env
           printf "%s" "${{ secrets.PROD_FRONTEND_ENV }}" > ./frontend/.env
 
-      - name: Stop current stack and remove project images only
-        env:
-          COMPOSE_BAKE: "false"
-        run: |
-          docker compose down --remove-orphans --rmi local || true
-
       - name: Reclaim build cache (safe)
         run: |
           df -h || true
@@ -41,7 +35,7 @@ jobs:
           docker system df || true
           df -h || true
 
-      - name: Build core images only
+      - name: Build backend and worker sequentially
         env:
           COMPOSE_BAKE: "false"
           COMPOSE_PARALLEL_LIMIT: "1"
@@ -56,6 +50,12 @@ jobs:
           COMPOSE_PARALLEL_LIMIT: "1"
         run: |
           docker compose up -d --remove-orphans postgres backend worker
+
+      - name: Keep nginx online without rebuild
+        env:
+          COMPOSE_BAKE: "false"
+        run: |
+          docker compose up -d --no-build nginx
 
       - name: Show running services
         run: docker compose ps
