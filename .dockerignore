@@ -6,3 +6,7 @@
 # Keep tests on GitHub, but exclude them from image build context
 backend/src/tests
 worker/src/test
+
+# Local-only compose/nginx files
+docker-compose.local.yml
+nginx/local.conf

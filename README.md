@@ -18,6 +18,7 @@ Incoming webhooks are accepted asynchronously (`202 Accepted`), stored as jobs, 
 - [Project Structure](#project-structure)
 - [Environment Variables](#environment-variables)
 - [Run with Docker](#run-with-docker)
+- [Run Locally with Docker](#run-locally-with-docker)
 - [Database and Migrations](#database-and-migrations)
 - [API](#api)
 - [Step Types and stepConfig](#step-types-and-stepconfig)
@@ -154,6 +155,31 @@ Services:
 
 Health check:
 - `GET http://localhost:3000/api/health`
+
+## Run Locally with Docker
+To run the full stack locally (Frontend + Backend + Worker + PostgreSQL) without Nginx/SSL production settings, use the local compose file:
+
+```bash
+docker compose -f docker-compose.local.yml up --build
+```
+
+Local service URLs:
+- Nginx entrypoint (frontend + API proxy): `http://localhost`
+- Frontend (direct): `http://localhost:5173`
+- Backend API (direct): `http://localhost:3000/api`
+- PostgreSQL: `localhost:5432`
+
+To stop and remove local containers:
+
+```bash
+docker compose -f docker-compose.local.yml down
+```
+
+To also remove local DB volume:
+
+```bash
+docker compose -f docker-compose.local.yml down -v
+```
 
 ## Database and Migrations
 Migrations are located in `shared/db/migrations`.
