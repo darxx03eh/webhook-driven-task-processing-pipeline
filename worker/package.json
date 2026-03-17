@@ -2,6 +2,8 @@
   "name": "worker",
   "version": "1.0.0",
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/worker/src/index.js"
@@ -16,6 +18,7 @@
     "@types/pg": "^8.18.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   }
 }
