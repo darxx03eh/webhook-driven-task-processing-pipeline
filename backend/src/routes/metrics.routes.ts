@@ -5,6 +5,10 @@ import { getMetricsSnapshotHandler } from "../controllers/metrics.controller";
 
 const metricsRouter = Router();
 
-metricsRouter.get("/metrics", requireAuth, asyncHandler(getMetricsSnapshotHandler));
+metricsRouter.get(
+  "/metrics",
+  requireAuth,
+  asyncHandler(getMetricsSnapshotHandler),
+);
 
 export default metricsRouter;

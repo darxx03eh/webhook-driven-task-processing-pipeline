@@ -1,8 +1,8 @@
 import { Router } from "express";
 import {
-    registerHandler,
-    loginHandler,
-    meHandler
+  registerHandler,
+  loginHandler,
+  meHandler,
 } from "../controllers/auth.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 import { createRateLimitMiddleware } from "../middleware/rate-limit.middleware";
@@ -11,9 +11,9 @@ import { asyncHandler } from "../utils/async-handler";
 
 const authRouter = Router();
 const authRateLimit = createRateLimitMiddleware({
-    scope: "auth",
-    windowMs: config.rateLimit.authWindowMs,
-    maxRequests: config.rateLimit.authMaxRequests
+  scope: "auth",
+  windowMs: config.rateLimit.authWindowMs,
+  maxRequests: config.rateLimit.authMaxRequests,
 });
 
 authRouter.post("/register", authRateLimit, asyncHandler(registerHandler));

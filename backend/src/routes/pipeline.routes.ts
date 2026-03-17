@@ -2,10 +2,10 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth.middleware";
 import { asyncHandler } from "../utils/async-handler";
 import {
-    createPipelineHandler,
-    deletePipelineHandler,
-    getPipelineByIdHandler,
-    getPipelinesHandler
+  createPipelineHandler,
+  deletePipelineHandler,
+  getPipelineByIdHandler,
+  getPipelinesHandler,
 } from "../controllers/pipeline.controller";
 
 const pipelineRouter = Router();
