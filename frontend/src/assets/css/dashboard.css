@@ -65,6 +65,32 @@
   margin-bottom: 14px;
 }
 
+.dashboard-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.dashboard-nav-link {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 700;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.dashboard-nav-link.is-active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
 .dashboard-grid {
   display: grid;
   gap: 16px;
@@ -568,6 +594,58 @@
 .friendly-section h4 {
   margin: 0;
   font-size: 16px;
+}
+
+.metrics-meta {
+  margin-top: -8px;
+}
+
+.metrics-sections {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.metrics-block {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+}
+
+.metrics-block h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.metrics-table-wrap {
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 420px;
+}
+
+.metrics-table th,
+.metrics-table td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+
+.metrics-table th {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 700;
+}
+
+.metrics-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .friendly-grid {

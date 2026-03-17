@@ -38,6 +38,7 @@ import "../assets/css/dashboard.css";
 type User = { id: string; username: string; email: string };
 type Toast = { id: number; type: "success" | "error"; message: string };
 type DialogView = null | "pipeline" | "step" | "subscriber" | "webhook" | "job";
+type DashboardView = "overview" | "metrics" | "pipelines" | "jobs";
 type ConfirmState = {
   open: boolean;
   title: string;
@@ -79,6 +80,11 @@ const formatDurationMs = (value: number | undefined) => {
   if (!value || !Number.isFinite(value)) return "-";
   if (value < 1000) return `${Math.round(value)} ms`;
   return `${(value / 1000).toFixed(2)} s`;
+};
+
+const formatMetricNumber = (value: number | undefined) => {
+  if (value === undefined || !Number.isFinite(value)) return "-";
+  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 };
 
 const formatSimpleValue = (value: unknown): string => {
@@ -131,6 +137,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [activeDialog, setActiveDialog] = useState<DialogView>(null);
+  const [activeView, setActiveView] = useState<DashboardView>("overview");
 
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [selectedPipelineId, setSelectedPipelineId] = useState("");
@@ -177,6 +184,12 @@ export default function DashboardPage() {
 
   const webhookDone = Boolean(selectedPipelineId && webhookDoneMap[selectedPipelineId]);
   const guidedStep = !selectedPipelineId ? 1 : steps.length === 0 ? 2 : subscribers.length === 0 ? 3 : !webhookDone ? 4 : 5;
+  const counterEntries = metrics ? Object.entries(metrics.counters) : [];
+  const durationEntries = metrics ? Object.entries(metrics.durations) : [];
+  const gaugeEntries = metrics ? Object.entries(metrics.gauges) : [];
+  const deliverySuccessRate = metrics && metrics.counters.deliveries_attempted_total > 0
+    ? `${Math.round((metrics.counters.deliveries_success_total / metrics.counters.deliveries_attempted_total) * 100)}%`
+    : "-";
 
   const toast = (type: "success" | "error", message: string) => {
     const id = toastIdRef.current++;
@@ -563,131 +576,231 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <section className="dashboard-card">
-          <div className="dashboard-inline-head">
-            <h2>Setup Progress</h2>
-            <span className="setup-status">Current step: {guidedStep > 4 ? "Completed" : guidedStep}</span>
-          </div>
-          <div className="setup-track">
-            <div className={`setup-step ${guidedStep > 1 ? "is-done" : guidedStep === 1 ? "is-active" : ""}`}><span>1</span><p>Create Pipeline</p></div>
-            <div className={`setup-step ${guidedStep > 2 ? "is-done" : guidedStep === 2 ? "is-active" : ""}`}><span>2</span><p>Add Steps</p></div>
-            <div className={`setup-step ${guidedStep > 3 ? "is-done" : guidedStep === 3 ? "is-active" : ""}`}><span>3</span><p>Add Subscribers</p></div>
-            <div className={`setup-step ${guidedStep > 4 ? "is-done" : guidedStep === 4 ? "is-active" : ""}`}><span>4</span><p>Send Test Webhook</p></div>
-          </div>
-        </section>
+        <nav className="dashboard-nav">
+          <button className={`dashboard-nav-link ${activeView === "overview" ? "is-active" : ""}`} onClick={() => setActiveView("overview")}>Overview</button>
+          <button className={`dashboard-nav-link ${activeView === "metrics" ? "is-active" : ""}`} onClick={() => setActiveView("metrics")}>Metrics</button>
+          <button className={`dashboard-nav-link ${activeView === "pipelines" ? "is-active" : ""}`} onClick={() => setActiveView("pipelines")}>Pipelines</button>
+          <button className={`dashboard-nav-link ${activeView === "jobs" ? "is-active" : ""}`} onClick={() => setActiveView("jobs")}>Jobs</button>
+        </nav>
 
-        <section className="dashboard-grid dashboard-grid-stats">
-          <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Pipelines</p><h3>{pipelines.length}</h3><span>Owned by your account</span></article>
-          <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Steps</p><h3>{steps.length}</h3><span>In selected pipeline</span></article>
-          <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Jobs</p><h3>{jobs.length}</h3><span>Recent execution history</span></article>
-        </section>
-
-        <section className="dashboard-card">
-          <div className="dashboard-inline-head">
-            <h2>Metrics Snapshot</h2>
-            <button className="dashboard-btn dashboard-btn-ghost" onClick={loadMetricsOnly}>Refresh Metrics</button>
-          </div>
-          <div className="dashboard-grid dashboard-grid-stats">
-            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Pending Jobs</p><h3>{metrics?.gauges.jobs_pending_gauge ?? 0}</h3><span>Queue health</span></article>
-            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Processing Jobs</p><h3>{metrics?.gauges.jobs_processing_gauge ?? 0}</h3><span>Currently running</span></article>
-            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Oldest Pending</p><h3>{metrics ? `${Math.round(metrics.gauges.oldest_pending_job_age_seconds)}s` : "-"}</h3><span>Backlog age</span></article>
-            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Webhook Avg Latency</p><h3>{formatDurationMs(metrics?.durations.webhook_ingest_duration_ms.avgMs)}</h3><span>Ingestion duration</span></article>
-            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Job Avg Duration</p><h3>{formatDurationMs(metrics?.durations.job_processing_duration_ms.avgMs)}</h3><span>Processing duration</span></article>
-            <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Delivery Success Rate</p><h3>{metrics && metrics.counters.deliveries_attempted_total > 0 ? `${Math.round((metrics.counters.deliveries_success_total / metrics.counters.deliveries_attempted_total) * 100)}%` : "-"}</h3><span>{metrics ? `${metrics.counters.deliveries_success_total}/${metrics.counters.deliveries_attempted_total} attempts` : "No attempts yet"}</span></article>
-          </div>
-        </section>
-
-        <section className="dashboard-grid dashboard-grid-main">
-          <article className="dashboard-card">
-            <h2>My Pipelines</h2>
-            <div className="dashboard-list">
-              {pipelines.map((pipeline) => (
-                <div key={pipeline.id} className={`dashboard-list-item ${selectedPipelineId === pipeline.id ? "is-active" : ""}`}>
-                  <button className="dashboard-list-main" onClick={() => setSelectedPipelineId(pipeline.id)}>
-                    <strong>{pipeline.name}</strong>
-                    <span>{pipeline.id}</span>
-                  </button>
-                  <button className="dashboard-danger-link" onClick={() => handleDeletePipeline(pipeline.id)}>Delete</button>
-                </div>
-              ))}
-              {pipelines.length === 0 ? <p className="dashboard-empty">No pipelines yet.</p> : null}
-            </div>
-          </article>
-
-          <article className="dashboard-card">
-            <h2>Pipeline Snapshot</h2>
-            {selectedPipelineDetails ? (
-              <div className="dashboard-kv">
-                <div><span>Name</span><strong>{selectedPipelineDetails.name}</strong></div>
-                <div><span>Webhook Path</span><strong>{selectedPipelineDetails.webhookPath}</strong></div>
-                <div><span>Webhook Secret</span><strong className="dashboard-mono">{selectedPipelineDetails.webhookSecret}</strong></div>
+        {activeView === "overview" ? (
+          <>
+            <section className="dashboard-card">
+              <div className="dashboard-inline-head">
+                <h2>Setup Progress</h2>
+                <span className="setup-status">Current step: {guidedStep > 4 ? "Completed" : guidedStep}</span>
               </div>
-            ) : <p className="dashboard-empty">Select a pipeline to see details.</p>}
-          </article>
-        </section>
-
-        <section className="dashboard-grid dashboard-grid-main">
-          <article className="dashboard-card">
-            <div className="dashboard-inline-head">
-              <h2>Pipeline Steps</h2>
-              <button className="dashboard-btn dashboard-btn-ghost" onClick={openCreateStepDialog} disabled={!selectedPipelineId}>Add Step</button>
-            </div>
-            <div className="dashboard-list">
-              {steps.map((step) => (
-                <div key={step.id} className="dashboard-list-item">
-                  <div className="dashboard-list-main-text">
-                    <strong>#{step.stepOrder} - {step.stepType}</strong>
-                    <span>{buildStepSummary(step)}</span>
-                  </div>
-                  <div className="dashboard-actions-row">
-                    <button className="dashboard-btn dashboard-btn-ghost" onClick={() => { fillStepForm(step); setActiveDialog("step"); }}>Edit</button>
-                    <button className="dashboard-danger-link" onClick={() => handleDeleteStep(step.id)}>Delete</button>
-                  </div>
-                </div>
-              ))}
-              {steps.length === 0 ? <p className="dashboard-empty">No steps yet.</p> : null}
-            </div>
-          </article>
-
-          <article className="dashboard-card">
-            <div className="dashboard-inline-head">
-              <h2>Subscribers</h2>
-              <button className="dashboard-btn dashboard-btn-ghost" onClick={() => setActiveDialog("subscriber")} disabled={!selectedPipelineId || steps.length === 0}>Add Subscriber</button>
-            </div>
-            <div className="dashboard-list">
-              {subscribers.map((subscriber) => (
-                <div key={subscriber.id} className="dashboard-list-item">
-                  <div className="dashboard-list-main-text">
-                    <strong>{subscriber.url}</strong>
-                    <span>{subscriber.id}</span>
-                  </div>
-                  <button className="dashboard-danger-link" onClick={() => handleDeleteSubscriber(subscriber.id)}>Delete</button>
-                </div>
-              ))}
-              {subscribers.length === 0 ? <p className="dashboard-empty">No subscribers yet.</p> : null}
-            </div>
-          </article>
-        </section>
-
-        <section className="dashboard-card">
-          <div className="dashboard-inline-head">
-            <h2>Job History</h2>
-            <button className="dashboard-btn dashboard-btn-ghost" onClick={refreshJobsOnly}>Refresh</button>
-          </div>
-          <div className="dashboard-list">
-            {jobs.map((job) => (
-              <div key={job.id} className="dashboard-list-item">
-                <div className="dashboard-list-main-text">
-                  <strong>{job.status}</strong>
-                  <span>{job.id}</span>
-                  <span>{formatDate(job.createdAt)}</span>
-                </div>
-                <button className="dashboard-btn dashboard-btn-ghost" onClick={() => handleOpenJob(job.id)}>Details</button>
+              <div className="setup-track">
+                <div className={`setup-step ${guidedStep > 1 ? "is-done" : guidedStep === 1 ? "is-active" : ""}`}><span>1</span><p>Create Pipeline</p></div>
+                <div className={`setup-step ${guidedStep > 2 ? "is-done" : guidedStep === 2 ? "is-active" : ""}`}><span>2</span><p>Add Steps</p></div>
+                <div className={`setup-step ${guidedStep > 3 ? "is-done" : guidedStep === 3 ? "is-active" : ""}`}><span>3</span><p>Add Subscribers</p></div>
+                <div className={`setup-step ${guidedStep > 4 ? "is-done" : guidedStep === 4 ? "is-active" : ""}`}><span>4</span><p>Send Test Webhook</p></div>
               </div>
-            ))}
-            {jobs.length === 0 ? <p className="dashboard-empty">No jobs found for this scope.</p> : null}
-          </div>
-        </section>
+            </section>
+
+            <section className="dashboard-grid dashboard-grid-stats">
+              <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Pipelines</p><h3>{pipelines.length}</h3><span>Owned by your account</span></article>
+              <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Steps</p><h3>{steps.length}</h3><span>In selected pipeline</span></article>
+              <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Jobs</p><h3>{jobs.length}</h3><span>Recent execution history</span></article>
+            </section>
+
+            <section className="dashboard-card">
+              <div className="dashboard-inline-head">
+                <h2>Metrics Snapshot</h2>
+                <button className="dashboard-btn dashboard-btn-ghost" onClick={loadMetricsOnly}>Refresh Metrics</button>
+              </div>
+              <div className="dashboard-grid dashboard-grid-stats">
+                <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Pending Jobs</p><h3>{metrics?.gauges.jobs_pending_gauge ?? 0}</h3><span>Queue health</span></article>
+                <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Processing Jobs</p><h3>{metrics?.gauges.jobs_processing_gauge ?? 0}</h3><span>Currently running</span></article>
+                <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Oldest Pending</p><h3>{metrics ? `${Math.round(metrics.gauges.oldest_pending_job_age_seconds)}s` : "-"}</h3><span>Backlog age</span></article>
+                <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Webhook Avg Latency</p><h3>{formatDurationMs(metrics?.durations.webhook_ingest_duration_ms.avgMs)}</h3><span>Ingestion duration</span></article>
+                <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Job Avg Duration</p><h3>{formatDurationMs(metrics?.durations.job_processing_duration_ms.avgMs)}</h3><span>Processing duration</span></article>
+                <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Delivery Success Rate</p><h3>{deliverySuccessRate}</h3><span>{metrics ? `${metrics.counters.deliveries_success_total}/${metrics.counters.deliveries_attempted_total} attempts` : "No attempts yet"}</span></article>
+              </div>
+            </section>
+          </>
+        ) : null}
+
+        {activeView === "metrics" ? (
+          <section className="dashboard-card">
+            <div className="dashboard-inline-head">
+              <h2>Metrics Snapshot</h2>
+              <button className="dashboard-btn dashboard-btn-ghost" onClick={loadMetricsOnly}>Refresh Metrics</button>
+            </div>
+            <p className="dashboard-subtitle metrics-meta">
+              Scope: {metrics?.scope ?? "-"} | Generated: {metrics ? formatDate(metrics.generatedAt) : "-"}
+            </p>
+            <div className="dashboard-grid dashboard-grid-stats">
+              <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Pending Jobs</p><h3>{metrics?.gauges.jobs_pending_gauge ?? 0}</h3><span>Queue health</span></article>
+              <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Processing Jobs</p><h3>{metrics?.gauges.jobs_processing_gauge ?? 0}</h3><span>Currently running</span></article>
+              <article className="dashboard-card dashboard-stat-card"><p className="dashboard-stat-label">Delivery Success Rate</p><h3>{deliverySuccessRate}</h3><span>{metrics ? `${metrics.counters.deliveries_success_total}/${metrics.counters.deliveries_attempted_total} attempts` : "No attempts yet"}</span></article>
+            </div>
+            <div className="metrics-sections">
+              <article className="metrics-block">
+                <h3>Counters</h3>
+                <div className="metrics-table-wrap">
+                  <table className="metrics-table">
+                    <thead>
+                      <tr><th>Metric</th><th>Value</th></tr>
+                    </thead>
+                    <tbody>
+                      {counterEntries.map(([key, value]) => (
+                        <tr key={key}>
+                          <td>{humanizeKey(key)}</td>
+                          <td>{formatMetricNumber(value as number)}</td>
+                        </tr>
+                      ))}
+                      {counterEntries.length === 0 ? <tr><td colSpan={2}>No counters available.</td></tr> : null}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="metrics-block">
+                <h3>Durations</h3>
+                <div className="metrics-table-wrap">
+                  <table className="metrics-table">
+                    <thead>
+                      <tr><th>Metric</th><th>Count</th><th>Sum (ms)</th><th>Avg (ms)</th></tr>
+                    </thead>
+                    <tbody>
+                      {durationEntries.map(([key, value]) => {
+                        const duration = value as { count: number; sumMs: number; avgMs: number };
+                        return (
+                          <tr key={key}>
+                            <td>{humanizeKey(key)}</td>
+                            <td>{formatMetricNumber(duration.count)}</td>
+                            <td>{formatMetricNumber(duration.sumMs)}</td>
+                            <td>{formatMetricNumber(duration.avgMs)}</td>
+                          </tr>
+                        );
+                      })}
+                      {durationEntries.length === 0 ? <tr><td colSpan={4}>No duration metrics available.</td></tr> : null}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article className="metrics-block">
+                <h3>Gauges</h3>
+                <div className="metrics-table-wrap">
+                  <table className="metrics-table">
+                    <thead>
+                      <tr><th>Metric</th><th>Value</th></tr>
+                    </thead>
+                    <tbody>
+                      {gaugeEntries.map(([key, value]) => (
+                        <tr key={key}>
+                          <td>{humanizeKey(key)}</td>
+                          <td>{formatMetricNumber(value as number)}</td>
+                        </tr>
+                      ))}
+                      {gaugeEntries.length === 0 ? <tr><td colSpan={2}>No gauges available.</td></tr> : null}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </section>
+        ) : null}
+
+        {activeView === "pipelines" ? (
+          <>
+            <section className="dashboard-grid dashboard-grid-main">
+              <article className="dashboard-card">
+                <h2>My Pipelines</h2>
+                <div className="dashboard-list">
+                  {pipelines.map((pipeline) => (
+                    <div key={pipeline.id} className={`dashboard-list-item ${selectedPipelineId === pipeline.id ? "is-active" : ""}`}>
+                      <button className="dashboard-list-main" onClick={() => setSelectedPipelineId(pipeline.id)}>
+                        <strong>{pipeline.name}</strong>
+                        <span>{pipeline.id}</span>
+                      </button>
+                      <button className="dashboard-danger-link" onClick={() => handleDeletePipeline(pipeline.id)}>Delete</button>
+                    </div>
+                  ))}
+                  {pipelines.length === 0 ? <p className="dashboard-empty">No pipelines yet.</p> : null}
+                </div>
+              </article>
+
+              <article className="dashboard-card">
+                <h2>Pipeline Snapshot</h2>
+                {selectedPipelineDetails ? (
+                  <div className="dashboard-kv">
+                    <div><span>Name</span><strong>{selectedPipelineDetails.name}</strong></div>
+                    <div><span>Webhook Path</span><strong>{selectedPipelineDetails.webhookPath}</strong></div>
+                    <div><span>Webhook Secret</span><strong className="dashboard-mono">{selectedPipelineDetails.webhookSecret}</strong></div>
+                  </div>
+                ) : <p className="dashboard-empty">Select a pipeline to see details.</p>}
+              </article>
+            </section>
+
+            <section className="dashboard-grid dashboard-grid-main">
+              <article className="dashboard-card">
+                <div className="dashboard-inline-head">
+                  <h2>Pipeline Steps</h2>
+                  <button className="dashboard-btn dashboard-btn-ghost" onClick={openCreateStepDialog} disabled={!selectedPipelineId}>Add Step</button>
+                </div>
+                <div className="dashboard-list">
+                  {steps.map((step) => (
+                    <div key={step.id} className="dashboard-list-item">
+                      <div className="dashboard-list-main-text">
+                        <strong>#{step.stepOrder} - {step.stepType}</strong>
+                        <span>{buildStepSummary(step)}</span>
+                      </div>
+                      <div className="dashboard-actions-row">
+                        <button className="dashboard-btn dashboard-btn-ghost" onClick={() => { fillStepForm(step); setActiveDialog("step"); }}>Edit</button>
+                        <button className="dashboard-danger-link" onClick={() => handleDeleteStep(step.id)}>Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                  {steps.length === 0 ? <p className="dashboard-empty">No steps yet.</p> : null}
+                </div>
+              </article>
+
+              <article className="dashboard-card">
+                <div className="dashboard-inline-head">
+                  <h2>Subscribers</h2>
+                  <button className="dashboard-btn dashboard-btn-ghost" onClick={() => setActiveDialog("subscriber")} disabled={!selectedPipelineId || steps.length === 0}>Add Subscriber</button>
+                </div>
+                <div className="dashboard-list">
+                  {subscribers.map((subscriber) => (
+                    <div key={subscriber.id} className="dashboard-list-item">
+                      <div className="dashboard-list-main-text">
+                        <strong>{subscriber.url}</strong>
+                        <span>{subscriber.id}</span>
+                      </div>
+                      <button className="dashboard-danger-link" onClick={() => handleDeleteSubscriber(subscriber.id)}>Delete</button>
+                    </div>
+                  ))}
+                  {subscribers.length === 0 ? <p className="dashboard-empty">No subscribers yet.</p> : null}
+                </div>
+              </article>
+            </section>
+          </>
+        ) : null}
+
+        {activeView === "jobs" ? (
+          <section className="dashboard-card">
+            <div className="dashboard-inline-head">
+              <h2>Job History</h2>
+              <button className="dashboard-btn dashboard-btn-ghost" onClick={refreshJobsOnly}>Refresh</button>
+            </div>
+            <div className="dashboard-list">
+              {jobs.map((job) => (
+                <div key={job.id} className="dashboard-list-item">
+                  <div className="dashboard-list-main-text">
+                    <strong>{job.status}</strong>
+                    <span>{job.id}</span>
+                    <span>{formatDate(job.createdAt)}</span>
+                  </div>
+                  <button className="dashboard-btn dashboard-btn-ghost" onClick={() => handleOpenJob(job.id)}>Details</button>
+                </div>
+              ))}
+              {jobs.length === 0 ? <p className="dashboard-empty">No jobs found for this scope.</p> : null}
+            </div>
+          </section>
+        ) : null}
       </div>
 
       <div className="toast-stack">
