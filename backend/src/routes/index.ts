@@ -16,9 +16,9 @@ router.use("/", webhookRouter);
 router.use("/", jobRouter);
 router.use("/", metricsRouter);
 router.get("/health", (req, res) => {
-    res.json({
-        status: "ok"
-    });
+  res.json({
+    status: "ok",
+  });
 });
 
 export default router;

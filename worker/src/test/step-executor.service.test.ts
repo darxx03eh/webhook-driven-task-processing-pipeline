@@ -8,21 +8,18 @@ describe("executePipelineSteps", () => {
   });
 
   it("stops the pipeline when filter condition fails", async () => {
-    const result = await executePipelineSteps(
-      { price: 10, product: "pizza" },
-      [
-        {
-          id: "s1",
-          stepOrder: 1,
-          stepType: "filter",
-          stepConfig: {
-            field: "price",
-            operator: ">",
-            value: 20,
-          },
+    const result = await executePipelineSteps({ price: 10, product: "pizza" }, [
+      {
+        id: "s1",
+        stepOrder: 1,
+        stepType: "filter",
+        stepConfig: {
+          field: "price",
+          operator: ">",
+          value: 20,
         },
-      ]
-    );
+      },
+    ]);
 
     expect(result.stopped).toBe(true);
     if (result.stopped) {
@@ -45,7 +42,7 @@ describe("executePipelineSteps", () => {
             remove: ["internalNote"],
           },
         },
-      ]
+      ],
     );
 
     expect(result.stopped).toBe(false);
@@ -65,26 +62,23 @@ describe("executePipelineSteps", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await executePipelineSteps(
-      { ip: "8.8.8.8" },
-      [
-        {
-          id: "s1",
-          stepOrder: 1,
-          stepType: "enrich_http",
-          stepConfig: {
-            url: "https://ipinfo.io/{{ip}}/json",
-            method: "GET",
-            timeoutMs: 5000,
-          },
+    const result = await executePipelineSteps({ ip: "8.8.8.8" }, [
+      {
+        id: "s1",
+        stepOrder: 1,
+        stepType: "enrich_http",
+        stepConfig: {
+          url: "https://ipinfo.io/{{ip}}/json",
+          method: "GET",
+          timeoutMs: 5000,
         },
-      ]
-    );
+      },
+    ]);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
       "https://ipinfo.io/8.8.8.8/json",
-      expect.objectContaining({ method: "GET" })
+      expect.objectContaining({ method: "GET" }),
     );
     expect(result.stopped).toBe(false);
     if (!result.stopped) {

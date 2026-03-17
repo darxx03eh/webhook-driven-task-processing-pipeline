@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "format:write": "prettier --write \"src/**/*.{js,ts,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,json,css,md}\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "nodemon --exec ts-node src/index.ts",
@@ -35,6 +37,7 @@
     "@types/pg": "^8.18.0",
     "esbuild": "^0.27.4",
     "nodemon": "^3.1.14",
+    "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"

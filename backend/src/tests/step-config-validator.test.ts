@@ -22,7 +22,7 @@ describe("step config validator", () => {
         field: "price",
         operator: ">",
         value: 20,
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -34,7 +34,7 @@ describe("step config validator", () => {
     expect(() =>
       validateStepConfigByType("enrich_http", {
         url: "ftp://example.com",
-      })
+      }),
     ).toThrow(AppError);
   });
 });

@@ -7,16 +7,20 @@ import { requestMetricsMiddleware } from "./middleware/request-metrics.middlewar
 
 const app = express();
 app.use(cors());
-app.use(express.json({
+app.use(
+  express.json({
     verify: (req, res, buf) => {
-        (req as express.Request & {
-            rawBody?: string
-        }).rawBody = buf.toString("utf-8");
-    }
-}));
+      (
+        req as express.Request & {
+          rawBody?: string;
+        }
+      ).rawBody = buf.toString("utf-8");
+    },
+  }),
+);
 app.use(requestMetricsMiddleware);
 app.use("/api", router);
 app.use(errorMiddleware);
 app.listen(config.port, () => {
-    console.log(`API server running on port ${config.port}`);
+  console.log(`API server running on port ${config.port}`);
 });
