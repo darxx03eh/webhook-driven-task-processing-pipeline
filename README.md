@@ -231,7 +231,7 @@ WORKER_POLL_INTERVAL_MS=5000
 
 ### `frontend/.env`
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=/api
 ```
 
 ## Run with Docker
