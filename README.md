@@ -19,6 +19,7 @@ Incoming webhooks are accepted asynchronously (`202 Accepted`), stored as jobs, 
 - [Environment Variables](#environment-variables)
 - [Run with Docker](#run-with-docker)
 - [Database and Migrations](#database-and-migrations)
+- [Database ERD](#database-erd)
 - [API](#api)
 - [Step Types and stepConfig](#step-types-and-stepconfig)
 - [Webhook Signature](#webhook-signature)
@@ -74,35 +75,128 @@ flowchart TD
 ```text
 webhook-driven-task-processing-pipeline/
   backend/
+    drizzle.config.ts
+    Dockerfile
     src/
+      config/
       controllers/
+      errors/
       middleware/
       routes/
       services/
+      types/
       utils/
-      config/
+      index.ts
+      receiver.ts
+      signature.ts
   worker/
+    Dockerfile
     src/
-      services/
       config/
+      services/
       types/
   frontend/
+    Dockerfile
     src/
       api/
-      pages/
-      components/
       assets/
+      components/
+      pages/
+      router/
+      types/
+      utils/
+      App.tsx
+      main.tsx
   shared/
     db/
+      database.ts
       schema.ts
       relations.ts
+      index.ts
       repositories/
       migrations/
   nginx/
+    Dockerfile
     default.conf
+  .github/
+    workflows/
+      ci.yml
+      cd.yml
+  .dockerignore
   docker-compose.yml
-  .github/workflows/ci.yml
+  README.md
 ```
+
+## Database ERD
+```mermaid
+erDiagram
+    USERS ||--o{ PIPELINES : owns
+    PIPELINES ||--o{ PIPELINES_STEPS : has
+    PIPELINES ||--o{ SUBSCRIBERS : has
+    PIPELINES ||--o{ JOBS : receives
+    JOBS ||--o{ DELIVERY_ATTEMPTS : creates
+    SUBSCRIBERS ||--o{ DELIVERY_ATTEMPTS : receives
+
+    USERS {
+      uuid id PK
+      text username UK
+      text email UK
+      text password_hash
+      timestamp created_at
+    }
+
+    PIPELINES {
+      uuid id PK
+      uuid user_id FK
+      text name
+      text webhook_secret
+      text webhook_path UK
+      timestamp created_at
+    }
+
+    PIPELINES_STEPS {
+      uuid id PK
+      uuid pipeline_id FK
+      int step_order
+      text step_type
+      jsonb step_config
+      timestamp created_at
+    }
+
+    SUBSCRIBERS {
+      uuid id PK
+      uuid pipeline_id FK
+      text url
+      text secret
+      timestamp created_at
+    }
+
+    JOBS {
+      uuid id PK
+      uuid pipeline_id FK
+      jsonb payload
+      text status
+      int attempts
+      jsonb result
+      text error
+      text stop_reason
+      timestamp created_at
+      timestamp updated_at
+      timestamp processed_at
+    }
+
+    DELIVERY_ATTEMPTS {
+      uuid id PK
+      uuid job_id FK
+      uuid subscriber_id FK
+      text status
+      int response_code
+      int attempt
+      timestamp created_at
+    }
+```
+
+Foreign keys are configured with `ON DELETE CASCADE` for dependent records.
 
 ## Environment Variables
 Create or verify these files:
@@ -396,7 +490,7 @@ On push/PR (`main`, `dev`), CI runs:
 - Docker image build checks:
   - backend image
   - worker image
-  - frontend image
+  - nginx image (serves frontend)
 
 ## Design Decisions
 - **Async webhook processing**: request returns fast and avoids timeouts.
