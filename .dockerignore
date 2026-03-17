@@ -1,0 +1,8 @@
+.git
+.github
+**/node_modules
+**/dist
+
+# Keep tests on GitHub, but exclude them from image build context
+backend/src/tests
+worker/src/test
