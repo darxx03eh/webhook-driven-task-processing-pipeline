@@ -6,13 +6,7 @@ import {
   findSubscriberByIdWithPipeline,
   findSubscribersByPipelineId,
 } from "../../../shared/db/repositories/subscribers.repository";
-
-type CreateSubscriberInput = {
-  pipelineId: string;
-  userId: string;
-  url: string;
-  secret?: string | null;
-};
+import type { CreateSubscriberInput } from "../types/subscribers";
 
 const isValidHttpUrl = (value: string) => {
   try {

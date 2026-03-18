@@ -7,17 +7,7 @@ import {
 } from "../../../shared/db/repositories/auth.repository";
 import { generateAccessToken } from "../utils/token";
 import { AppError } from "../errors/app-error";
-
-type RegisterInput = {
-  username: string;
-  email: string;
-  password: string;
-};
-
-type LoginInput = {
-  email: string;
-  password: string;
-};
+import type { LoginInput, RegisterInput } from "../types/auth";
 
 export const register = async (input: RegisterInput) => {
   const existingUserByEmail = await findUserByEmail(input.email);

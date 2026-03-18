@@ -4,13 +4,7 @@ import { findPipelineByWebhookPath } from "../../../shared/db/repositories/pipel
 import { verifyWebhookSignature } from "../utils/webhook-signature";
 import { incrementMetric } from "../../../shared/metrics/runtime-metrics.repository";
 import { MetricKeys } from "../../../shared/metrics/metric-keys";
-
-type IngestWebhookInput = {
-  webhookPath: string;
-  rawBody: string;
-  payload: unknown;
-  signature?: string;
-};
+import type { IngestWebhookInput } from "../types/webhook";
 
 export const ingestWebhookService = async (input: IngestWebhookInput) => {
   const pipeline = await findPipelineByWebhookPath(input.webhookPath);

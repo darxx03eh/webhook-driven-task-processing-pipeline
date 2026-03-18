@@ -4,7 +4,6 @@ import {
   findJobsByPipelineIdForUser,
   findJobsByUserId,
 } from "../../../shared/db/repositories/jobs.repository";
-import { pipeline } from "node:stream";
 
 export const getJobsService = async (userId: string) =>
   findJobsByUserId(userId);

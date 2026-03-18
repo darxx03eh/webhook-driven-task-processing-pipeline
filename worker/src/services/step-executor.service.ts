@@ -4,13 +4,7 @@ import type {
   StepExecutionResult,
   TransformStepConfig,
 } from "../types/step.types";
-
-type PipelineStep = {
-  id: string;
-  stepOrder: number;
-  stepType: string;
-  stepConfig: unknown;
-};
+import type { PipelineStep } from "../types/pipeline-step.types";
 
 const compareValues = (
   left: unknown,

@@ -5,12 +5,10 @@ import {
   recordDurationMetric,
 } from "../../../shared/metrics/runtime-metrics.repository";
 import { MetricKeys } from "../../../shared/metrics/metric-keys";
-
-type DeliveryResultInput = {
-  jobId: string;
-  pipelineId: string;
-  result: Record<string, unknown>;
-};
+import type {
+  DeliveryResultInput,
+  DeliverySubscriber,
+} from "../types/subscriber-delivery.types";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const RETRY_DELAYS = [0, 5000, 15000];
@@ -18,11 +16,7 @@ const RETRY_DELAYS = [0, 5000, 15000];
 const deliverToSingleSubscriber = async (
   jobId: string,
   pipelineId: string,
-  subscriber: {
-    id: string;
-    url: string;
-    secret?: string | null;
-  },
+  subscriber: DeliverySubscriber,
   result: Record<string, unknown>,
 ) => {
   for (let index = 0; index < RETRY_DELAYS.length; index++) {
