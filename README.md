@@ -218,9 +218,9 @@ JWT_ISSUER=webhook-pipeline
 JWT_AUDIENCE=webhook-pipeline-users
 JWT_EXPIRATION=7d
 RATE_LIMIT_AUTH_WINDOW_MS=120000
-RATE_LIMIT_AUTH_MAX_REQUESTS=5
-RATE_LIMIT_WEBHOOK_WINDOW_MS=120000
-RATE_LIMIT_WEBHOOK_MAX_REQUESTS=30
+RATE_LIMIT_AUTH_MAX_REQUESTS=3
+RATE_LIMIT_WEBHOOK_WINDOW_MS=300000
+RATE_LIMIT_WEBHOOK_MAX_REQUESTS=10
 ```
 
 ### `worker/.env`
@@ -233,6 +233,7 @@ WORKER_POLL_INTERVAL_MS=5000
 ```env
 VITE_API_BASE_URL=/api
 ```
+For production, set `VITE_API_BASE_URL=/api`.
 
 ## Run with Docker
 From project root:
@@ -459,10 +460,10 @@ Response behavior when exceeded:
 - `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` headers
 
 Tune via backend env vars:
-- `RATE_LIMIT_AUTH_WINDOW_MS` (default `60000`)
-- `RATE_LIMIT_AUTH_MAX_REQUESTS` (default `10`)
-- `RATE_LIMIT_WEBHOOK_WINDOW_MS` (default `60000`)
-- `RATE_LIMIT_WEBHOOK_MAX_REQUESTS` (default `60`)
+- `RATE_LIMIT_AUTH_WINDOW_MS` (default `120000`)
+- `RATE_LIMIT_AUTH_MAX_REQUESTS` (default `3`)
+- `RATE_LIMIT_WEBHOOK_WINDOW_MS` (default `300000`)
+- `RATE_LIMIT_WEBHOOK_MAX_REQUESTS` (default `10`)
 
 ## Metrics Snapshot
 The backend exposes `GET /api/metrics` (auth required) for operational visibility.
@@ -580,9 +581,9 @@ JWT_ISSUER=webhook-pipeline
 JWT_AUDIENCE=webhook-pipeline-users
 JWT_EXPIRATION=7d
 RATE_LIMIT_AUTH_WINDOW_MS=120000
-RATE_LIMIT_AUTH_MAX_REQUESTS=5
-RATE_LIMIT_WEBHOOK_WINDOW_MS=120000
-RATE_LIMIT_WEBHOOK_MAX_REQUESTS=30
+RATE_LIMIT_AUTH_MAX_REQUESTS=3
+RATE_LIMIT_WEBHOOK_WINDOW_MS=300000
+RATE_LIMIT_WEBHOOK_MAX_REQUESTS=10
 ```
 
 `PROD_WORKER_ENV`
@@ -593,7 +594,7 @@ WORKER_POLL_INTERVAL_MS=5000
 
 `PROD_FRONTEND_ENV`
 ```env
-VITE_API_BASE_URL=/api
+VITE_API_BASE_URL=https://api.darawsheh.dev
 ```
 
 Notes:
@@ -609,23 +610,25 @@ docker compose up -d --build
 Configured production domain:
 - `darawsheh.dev`
 - `www.darawsheh.dev`
+- `api.darawsheh.dev`
 
 DNS records used (Name.com):
 - `A` record: `darawsheh.dev -> 100.27.217.58`
 - `CNAME` record: `www.darawsheh.dev -> darawsheh.dev`
+- `CNAME` record: `api.darawsheh.dev -> darawsheh.dev`
 
 Let's Encrypt command used:
 
 ```bash
 sudo certbot certonly --standalone \
-  -d darawsheh.dev -d www.darawsheh.dev \
+  -d darawsheh.dev -d www.darawsheh.dev -d api.darawsheh.dev \
   --agree-tos -m your-email@example.com --non-interactive
 ```
 
 Nginx production behavior:
 - Redirects HTTP (80) to HTTPS (443)
-- Serves frontend static files
-- Proxies API requests from `/api` to backend (`backend:3000`)
+- Serves frontend static files on `darawsheh.dev` and `www.darawsheh.dev`
+- Proxies API requests from `api.darawsheh.dev` to backend (`backend:3000`)
 
 Additional checks:
 
