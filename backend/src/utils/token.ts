@@ -1,11 +1,7 @@
 import jwt from "jsonwebtoken";
 import { config } from "../config/env";
-
-export type AccessTokenPayload = {
-  userId: string;
-  email: string;
-  username: string;
-};
+import type { AccessTokenPayload } from "../types/token";
+export type { AccessTokenPayload } from "../types/token";
 
 export const generateAccessToken = (payload: AccessTokenPayload) => {
   return jwt.sign(payload, Buffer.from(config.jwt.secret), {

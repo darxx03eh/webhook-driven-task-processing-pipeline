@@ -2,17 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { sendErrorResponse } from "../utils/api-response";
 import { incrementMetric } from "../../../shared/metrics/runtime-metrics.repository";
 import { MetricKeys } from "../../../shared/metrics/metric-keys";
-
-type RateLimitConfig = {
-  windowMs: number;
-  maxRequests: number;
-  scope: string;
-};
-
-type Bucket = {
-  count: number;
-  resetAt: number;
-};
+import type { Bucket, RateLimitConfig } from "../types/rate-limit";
 
 const buckets = new Map<string, Bucket>();
 

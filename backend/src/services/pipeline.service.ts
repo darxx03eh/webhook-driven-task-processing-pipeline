@@ -1,16 +1,12 @@
 import crypto from "crypto";
 import { AppError } from "../errors/app-error";
+import type { CreatePipelineInput } from "../types/pipelines";
 import {
   createPipeline,
   deletePipelineByIdAndUserId,
   findPipelineByIdAndUserId,
   findPipelinesByUserId,
 } from "../../../shared/db/repositories/pipelines.repository";
-
-type CreatePipelineInput = {
-  userId: string;
-  name: string;
-};
 
 const generateWebhookSecret = () => crypto.randomBytes(32).toString("hex");
 const generateWebhookPath = () => crypto.randomBytes(12).toString("hex");

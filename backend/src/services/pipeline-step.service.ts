@@ -1,4 +1,8 @@
 import { AppError } from "../errors/app-error";
+import type {
+  CreatePipelineStepInput,
+  UpdatePipelineStepInput,
+} from "../types/pipelines";
 import {
   validateStepConfigByType,
   validateStepType,
@@ -11,22 +15,6 @@ import {
   findStepByIdWithPipeline,
   updatePipelineStepById,
 } from "../../../shared/db/repositories/pipelines-step.repository";
-
-type CreatePipelineStepInput = {
-  pipelineId: string;
-  userId: string;
-  stepOrder: number;
-  stepType: string;
-  stepConfig: unknown;
-};
-
-type UpdatePipelineStepInput = {
-  stepId: string;
-  userId: string;
-  stepOrder: number;
-  stepType: string;
-  stepConfig: unknown;
-};
 
 const validateStepOrder = (stepOrder: number) => {
   if (!Number.isInteger(stepOrder) || stepOrder < 1)
