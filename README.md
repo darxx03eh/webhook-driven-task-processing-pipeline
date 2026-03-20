@@ -179,6 +179,7 @@ erDiagram
       text status
       int attempts
       jsonb result
+      jsonb steps_snapshot
       text error
       text stop_reason
       timestamp created_at
