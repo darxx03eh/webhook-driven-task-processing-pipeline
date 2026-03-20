@@ -43,6 +43,13 @@
       "when": 1773172197364,
       "tag": "0005_soft_rachel_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774028913992,
+      "tag": "0006_mushy_jubilee",
+      "breakpoints": true
     }
   ]
 }

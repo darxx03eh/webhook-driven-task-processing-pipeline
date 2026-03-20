@@ -1,0 +1,1 @@
+ALTER TABLE "jobs" ADD COLUMN "steps_snapshot" jsonb;

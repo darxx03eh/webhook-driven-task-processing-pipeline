@@ -21,6 +21,13 @@ export type JobPipeline = {
     createdAt: string;
 };
 
+export type JobStepSnapshot = {
+    id: string;
+    stepOrder: number;
+    stepType: string;
+    stepConfig: unknown;
+};
+
 export type Job = {
     id: string;
     pipelineId: string;
@@ -28,6 +35,7 @@ export type Job = {
     status: JobStatus;
     attempts: number;
     result: unknown;
+    stepsSnapshot: JobStepSnapshot[] | null;
     error: string | null;
     stopReason: string | null;
     createdAt: string;

@@ -12,6 +12,32 @@ import {
   recordDurationMetric,
 } from "../../../shared/metrics/runtime-metrics.repository";
 import { MetricKeys } from "../../../shared/metrics/metric-keys";
+import type { PipelineStep } from "../types/pipeline-step.types";
+
+const readStepsSnapshot = (value: unknown): PipelineStep[] => {
+  if (!Array.isArray(value)) return [];
+
+  const parsedSteps: PipelineStep[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const step = item as Record<string, unknown>;
+    if (
+      typeof step.id !== "string" ||
+      typeof step.stepType !== "string" ||
+      typeof step.stepOrder !== "number"
+    ) {
+      continue;
+    }
+    parsedSteps.push({
+      id: step.id,
+      stepType: step.stepType,
+      stepOrder: step.stepOrder,
+      stepConfig: step.stepConfig ?? {},
+    });
+  }
+
+  return parsedSteps.sort((a, b) => a.stepOrder - b.stepOrder);
+};
 
 export const runNextPendingJob = async () => {
   const pendingJob = await claimNextPendingJob();
@@ -22,7 +48,11 @@ export const runNextPendingJob = async () => {
   console.log(`[worker] Claimed pending job with id ${pendingJob.id}`);
 
   try {
-    const steps = await findPipelineStepsByPipelineId(pendingJob.pipelineId);
+    const snapshotSteps = readStepsSnapshot(pendingJob.stepsSnapshot);
+    const steps =
+      snapshotSteps.length > 0
+        ? snapshotSteps
+        : await findPipelineStepsByPipelineId(pendingJob.pipelineId);
     const payload =
       pendingJob.payload && typeof pendingJob.payload === "object"
         ? (pendingJob.payload as Record<string, unknown>)
