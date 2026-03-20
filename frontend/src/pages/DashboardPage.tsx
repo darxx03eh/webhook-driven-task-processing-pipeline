@@ -28,6 +28,7 @@ import {
   getJobsRequest,
   getPipelineJobsRequest,
   type Job,
+  type JobStepSnapshot,
 } from "../api/jobs.api";
 import { ingestWebhookRequest } from "../api/webhooks.api";
 import { getMetricsSnapshotRequest, type MetricsSnapshot } from "../api/metrics.api";
@@ -37,7 +38,7 @@ import "../assets/css/dashboard.css";
 
 type User = { id: string; username: string; email: string };
 type Toast = { id: number; type: "success" | "error"; message: string };
-type DialogView = null | "pipeline" | "step" | "subscriber" | "webhook" | "job";
+type DialogView = null | "pipeline" | "step" | "subscriber" | "webhook" | "job" | "jobSteps";
 type DashboardView = "overview" | "metrics" | "pipelines" | "jobs";
 type ConfirmState = {
   open: boolean;
@@ -122,6 +123,23 @@ const buildStepSummary = (step: PipelineStep): string => {
   return `Enrich HTTP: GET ${String(config.url ?? "")} (timeout ${String(config.timeoutMs ?? 5000)}ms)`;
 };
 
+const buildJobStepSummary = (step: JobStepSnapshot): string => {
+  const config = (step.stepConfig ?? {}) as Record<string, unknown>;
+  if (step.stepType === "filter") {
+    return `Filter: ${String(config.field ?? "field")} ${String(config.operator ?? "==")} ${formatSimpleValue(config.value)}`;
+  }
+  if (step.stepType === "transform") {
+    const renameCount = Object.keys((config.rename ?? {}) as Record<string, unknown>).length;
+    const addCount = Object.keys((config.add ?? {}) as Record<string, unknown>).length;
+    const removeCount = Array.isArray(config.remove) ? config.remove.length : 0;
+    return `Transform: rename ${renameCount}, add ${addCount}, remove ${removeCount}`;
+  }
+  if (step.stepType === "enrich_http") {
+    return `Enrich HTTP: GET ${String(config.url ?? "")} (timeout ${String(config.timeoutMs ?? 5000)}ms)`;
+  }
+  return `Unknown step type: ${step.stepType}`;
+};
+
 async function generateHmacSha256Hex(secret: string, message: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -180,6 +198,7 @@ export default function DashboardPage() {
 
   const payloadEntries = toEntries(focusedJob?.payload);
   const resultEntries = toEntries(focusedJob?.result);
+  const jobStepsSnapshot = focusedJob?.stepsSnapshot ?? [];
   const subscriberLookup = new Map(subscribers.map((item) => [item.id, item.url]));
 
   const webhookDone = Boolean(selectedPipelineId && webhookDoneMap[selectedPipelineId]);
@@ -905,6 +924,15 @@ export default function DashboardPage() {
               <p><strong>Stop reason:</strong> {focusedJob.stopReason ?? "Completed normally"}</p>
             </div>
 
+            <div className="job-info-actions">
+              <button
+                className="dashboard-btn dashboard-btn-ghost"
+                onClick={() => setActiveDialog("jobSteps")}
+              >
+                Executed Steps
+              </button>
+            </div>
+
             <div className="friendly-section">
               <h4>Incoming Payload</h4>
               {payloadEntries.length > 0 ? (
@@ -961,6 +989,42 @@ export default function DashboardPage() {
                   </table>
                 </div>
               ) : <p className="dashboard-empty">No delivery attempts recorded.</p>}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {activeDialog === "jobSteps" && focusedJob ? (
+        <div className="dialog-overlay">
+          <div className="dialog-modal dialog-modal-wide">
+            <div className="dialog-head">
+              <h3>Executed Steps</h3>
+              <button className="dialog-close" onClick={() => setActiveDialog("job")}>x</button>
+            </div>
+
+            <div className="job-info-note">
+              <p><strong>Job ID:</strong> <span className="dashboard-mono">{focusedJob.id}</span></p>
+              <p><strong>Pipeline:</strong> {focusedJob.pipeline?.name ?? focusedJob.pipelineId}</p>
+            </div>
+
+            <div className="dashboard-list">
+              {jobStepsSnapshot.length > 0 ? (
+                [...jobStepsSnapshot]
+                  .sort((a, b) => a.stepOrder - b.stepOrder)
+                  .map((step) => (
+                    <div key={`${step.id}-${step.stepOrder}`} className="dashboard-list-item dashboard-list-item-column">
+                      <div className="dashboard-step-head">
+                        <strong>#{step.stepOrder} - {step.stepType}</strong>
+                      </div>
+                      <span>{buildJobStepSummary(step)}</span>
+                      <pre className="dashboard-pre">{JSON.stringify(step.stepConfig ?? {}, null, 2)}</pre>
+                    </div>
+                  ))
+              ) : (
+                <p className="dashboard-empty">
+                  No snapshot was saved for this job. This can happen for jobs created before the snapshot feature.
+                </p>
+              )}
             </div>
           </div>
         </div>

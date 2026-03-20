@@ -1,6 +1,7 @@
 import { AppError } from "../errors/app-error";
 import { createJob } from "../../../shared/db/repositories/jobs.repository";
 import { findPipelineByWebhookPath } from "../../../shared/db/repositories/pipelines.repository";
+import { findPipelineStepsByPipelineId } from "../../../shared/db/repositories/pipelines-step.repository";
 import { verifyWebhookSignature } from "../utils/webhook-signature";
 import { incrementMetric } from "../../../shared/metrics/runtime-metrics.repository";
 import { MetricKeys } from "../../../shared/metrics/metric-keys";
@@ -30,9 +31,18 @@ export const ingestWebhookService = async (input: IngestWebhookInput) => {
     throw new AppError("Invalid webhook signature", "INVALID_SIGNATURE", 401);
   }
 
+  const currentPipelineSteps = await findPipelineStepsByPipelineId(pipeline.id);
+  const stepsSnapshot = currentPipelineSteps.map((step) => ({
+    id: step.id,
+    stepOrder: step.stepOrder,
+    stepType: step.stepType,
+    stepConfig: step.stepConfig,
+  }));
+
   const job = await createJob({
     pipelineId: pipeline.id,
     payload: input.payload,
+    stepsSnapshot,
   });
 
   return {

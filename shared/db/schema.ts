@@ -35,6 +35,7 @@ export const jobs = pgTable("jobs", {
     pipelineId: uuid("pipeline_id").notNull()
     .references(() => pipelines.id, { onDelete: "cascade" }),
     payload: jsonb("payload").notNull(),
+    stepsSnapshot: jsonb("steps_snapshot"),
     status: text("status").notNull(),
     attempts: integer("attempts").notNull().default(0),
     result: jsonb("result"),

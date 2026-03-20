@@ -1,10 +1,11 @@
 import { db } from "../index";
 import { asc, desc, eq, and, sql } from "drizzle-orm";
-import { deliveryAttempts, jobs, pipelines } from "../schema";
+import { jobs, pipelines } from "../schema";
 
 type CreateJobInput = {
     pipelineId: string;
     payload: unknown;
+    stepsSnapshot?: unknown;
 };
 
 export const createJob = async (input: CreateJobInput) => {
@@ -12,6 +13,7 @@ export const createJob = async (input: CreateJobInput) => {
         .values({
             pipelineId: input.pipelineId,
             payload: input.payload,
+            stepsSnapshot: input.stepsSnapshot ?? null,
             status: "pending",
             attempts: 0
         }).returning();

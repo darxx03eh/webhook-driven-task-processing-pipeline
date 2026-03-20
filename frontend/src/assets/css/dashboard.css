@@ -585,6 +585,10 @@
   margin: 0;
 }
 
+.job-info-actions {
+  margin-top: 12px;
+}
+
 .friendly-section {
   margin-top: 14px;
   display: grid;
