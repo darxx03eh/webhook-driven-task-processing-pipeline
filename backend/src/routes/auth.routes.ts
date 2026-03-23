@@ -21,4 +21,3 @@ authRouter.post("/login", authRateLimit, asyncHandler(loginHandler));
 authRouter.get("/me", requireAuth, asyncHandler(meHandler));
 
 export default authRouter;
-

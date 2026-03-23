@@ -25,4 +25,3 @@ subscriberRouter.delete(
 );
 
 export default subscriberRouter;
-

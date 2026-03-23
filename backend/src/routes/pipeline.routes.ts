@@ -15,4 +15,3 @@ pipelineRouter.get("/:id", requireAuth, asyncHandler(getPipelineByIdHandler));
 pipelineRouter.delete("/:id", requireAuth, asyncHandler(deletePipelineHandler));
 
 export default pipelineRouter;
-

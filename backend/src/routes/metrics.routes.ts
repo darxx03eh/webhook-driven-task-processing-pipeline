@@ -12,4 +12,3 @@ metricsRouter.get(
 );
 
 export default metricsRouter;
-

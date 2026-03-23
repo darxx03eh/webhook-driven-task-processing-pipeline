@@ -24,4 +24,3 @@ app.use(errorMiddleware);
 app.listen(config.port, () => {
   console.log(`API server running on port ${config.port}`);
 });
-
