@@ -2,8 +2,8 @@ import express from "express";
 import cors from "cors";
 import router from "./routes/index";
 import { config } from "./config/env";
-import { errorMiddleware } from "./middleware/error.middleware";
-import { requestMetricsMiddleware } from "./middleware/request-metrics.middleware";
+import { errorMiddleware } from "./middlewares/error.middleware";
+import { requestMetricsMiddleware } from "./middlewares/request-metrics.middleware";
 
 const app = express();
 app.use(cors());
@@ -24,3 +24,4 @@ app.use(errorMiddleware);
 app.listen(config.port, () => {
   console.log(`API server running on port ${config.port}`);
 });
+

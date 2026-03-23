@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.middleware";
+import { requireAuth } from "../middlewares/auth.middleware";
 import { asyncHandler } from "../utils/async-handler";
 import { getMetricsSnapshotHandler } from "../controllers/metrics.controller";
 
@@ -12,3 +12,4 @@ metricsRouter.get(
 );
 
 export default metricsRouter;
+

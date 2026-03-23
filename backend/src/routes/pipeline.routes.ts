@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.middleware";
+import { requireAuth } from "../middlewares/auth.middleware";
 import { asyncHandler } from "../utils/async-handler";
 import {
   createPipelineHandler,
@@ -15,3 +15,4 @@ pipelineRouter.get("/:id", requireAuth, asyncHandler(getPipelineByIdHandler));
 pipelineRouter.delete("/:id", requireAuth, asyncHandler(deletePipelineHandler));
 
 export default pipelineRouter;
+

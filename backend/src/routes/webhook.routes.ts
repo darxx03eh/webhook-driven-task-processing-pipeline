@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../utils/async-handler";
 import { ingestWebhookHandler } from "../controllers/webhook.controller";
-import { createRateLimitMiddleware } from "../middleware/rate-limit.middleware";
+import { createRateLimitMiddleware } from "../middlewares/rate-limit.middleware";
 import { config } from "../config/env";
 
 const webhookRouter = Router();
@@ -18,3 +18,4 @@ webhookRouter.post(
 );
 
 export default webhookRouter;
+

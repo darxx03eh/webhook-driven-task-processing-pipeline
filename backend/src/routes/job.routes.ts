@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../utils/async-handler";
-import { requireAuth } from "../middleware/auth.middleware";
+import { requireAuth } from "../middlewares/auth.middleware";
 import {
   getJobByIdHandler,
   getJobsHandler,
@@ -17,3 +17,4 @@ jobRouter.get(
 );
 
 export default jobRouter;
+

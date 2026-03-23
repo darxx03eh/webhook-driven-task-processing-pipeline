@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.middleware";
+import { requireAuth } from "../middlewares/auth.middleware";
 import { asyncHandler } from "../utils/async-handler";
 import {
   createSubscriberHandler,
@@ -25,3 +25,4 @@ subscriberRouter.delete(
 );
 
 export default subscriberRouter;
+

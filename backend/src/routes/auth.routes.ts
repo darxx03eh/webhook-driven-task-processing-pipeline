@@ -4,8 +4,8 @@ import {
   loginHandler,
   meHandler,
 } from "../controllers/auth.controller";
-import { requireAuth } from "../middleware/auth.middleware";
-import { createRateLimitMiddleware } from "../middleware/rate-limit.middleware";
+import { requireAuth } from "../middlewares/auth.middleware";
+import { createRateLimitMiddleware } from "../middlewares/rate-limit.middleware";
 import { config } from "../config/env";
 import { asyncHandler } from "../utils/async-handler";
 
@@ -21,3 +21,4 @@ authRouter.post("/login", authRateLimit, asyncHandler(loginHandler));
 authRouter.get("/me", requireAuth, asyncHandler(meHandler));
 
 export default authRouter;
+
