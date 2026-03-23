@@ -1,5 +1,5 @@
-![Tests](https://github.com/darxx03eh/webhook-driven-task-processing-pipeline/actions/workflows/ci.yml/badge.svg)
-![Tests](https://github.com/darxx03eh/webhook-driven-task-processing-pipeline/actions/workflows/cd.yml/badge.svg)
+![CI](https://github.com/darxx03eh/webhook-driven-task-processing-pipeline/actions/workflows/ci.yml/badge.svg)
+![CD](https://github.com/darxx03eh/webhook-driven-task-processing-pipeline/actions/workflows/cd.yml/badge.svg)
 # Webhook-Driven Task Processing Pipeline
 
 A production-style webhook processing platform built with TypeScript, PostgreSQL, Docker, and GitHub Actions.
@@ -19,17 +19,21 @@ Incoming webhooks are accepted asynchronously (`202 Accepted`), stored as jobs, 
 - [Environment Variables](#environment-variables)
 - [Run with Docker](#run-with-docker)
 - [Run Locally with Docker](#run-locally-with-docker)
+- [Testing and Quality Checks](#testing-and-quality-checks)
 - [Database and Migrations](#database-and-migrations)
 - [Database ERD](#database-erd)
 - [API](#api)
 - [Step Types and stepConfig](#step-types-and-stepconfig)
 - [Webhook Signature](#webhook-signature)
+- [Rate Limiting](#rate-limiting)
+- [Metrics Snapshot](#metrics-snapshot)
 - [Worker Flow and Reliability](#worker-flow-and-reliability)
 - [CI Pipeline](#ci-pipeline)
 - [CD Pipeline](#cd-pipeline)
 - [Domain and HTTPS](#domain-and-https)
 - [Design Decisions](#design-decisions)
 - [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ## Features
 - JWT authentication (`register`, `login`, `me`) with issuer/audience validation.
@@ -82,9 +86,10 @@ webhook-driven-task-processing-pipeline/
       config/
       controllers/
       errors/
-      middleware/
+      middlewares/
       routes/
       services/
+      tests/
       types/
       utils/
       index.ts
@@ -95,6 +100,7 @@ webhook-driven-task-processing-pipeline/
     src/
       config/
       services/
+      test/
       types/
   frontend/
     Dockerfile
@@ -244,13 +250,12 @@ docker compose up --build
 ```
 
 Services:
-- Frontend (Vite): `http://localhost:5173`
-- Backend API: `http://localhost:3000`
-- Nginx proxy to frontend: `http://localhost:80`
+- Nginx ingress (ports `80` and `443`)
+- Backend and worker are internal services in this compose file (not exposed directly on host ports).
 - PostgreSQL: `localhost:5432`
 
 Health check:
-- `GET http://localhost:3000/api/health`
+- `docker compose exec backend wget -q -O - http://localhost:3000/api/health`
 
 ## Run Locally with Docker
 To run the full stack locally (Frontend + Backend + Worker + PostgreSQL) without Nginx/SSL production settings, use the local compose file:
@@ -275,6 +280,36 @@ To also remove local DB volume:
 
 ```bash
 docker compose -f docker-compose.local.yml down -v
+```
+
+## Testing and Quality Checks
+The backend and worker both use Vitest and Prettier.
+
+### Backend
+```bash
+cd backend
+npm ci
+npm run format:check
+npm test
+npm run build
+```
+
+### Worker
+```bash
+cd worker
+npm ci
+npm run format:check
+npm test
+npm run build
+```
+
+### Frontend
+Frontend currently has no `test` script in `package.json`. CI validates it through build:
+
+```bash
+cd frontend
+npm ci
+npm run build
 ```
 
 ## Database and Migrations
@@ -508,9 +543,13 @@ GitHub Actions workflow: `.github/workflows/ci.yml`
 On push/PR (`main`, `dev`), CI runs:
 - Backend:
   - `npm ci`
+  - `npm run format:check`
+  - `npm test`
   - `npm run build`
 - Worker:
   - `npm ci`
+  - `npm run format:check`
+  - `npm test`
   - `npm run build`
 - Frontend:
   - `npm ci`
