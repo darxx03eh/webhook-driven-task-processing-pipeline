@@ -3,6 +3,7 @@ import {
   createSubscriber,
   deleteSubscriberById,
   findPipelineOwnedByUserForSubscribers,
+  findSubscriberByPipelineIdAndUrl,
   findSubscriberByIdWithPipeline,
   findSubscribersByPipelineId,
 } from "../../../shared/db/repositories/subscribers.repository";
@@ -29,6 +30,18 @@ export const createSubscriberService = async (input: CreateSubscriberInput) => {
     throw new AppError("Subscriber URL is required", "VALIDATION_ERROR", 400);
   if (!isValidHttpUrl(trimmedUrl))
     throw new AppError("Invalid subscriber URL", "INVALID_SUBSCRIBER_URL", 400);
+
+  const existingSubscriber = await findSubscriberByPipelineIdAndUrl(
+    input.pipelineId,
+    trimmedUrl,
+  );
+  if (existingSubscriber)
+    throw new AppError(
+      "Subscriber URL already exists in this pipeline",
+      "SUBSCRIBER_URL_CONFLICT",
+      409,
+    );
+
   const subscriber = await createSubscriber({
     pipelineId: input.pipelineId,
     url: trimmedUrl,

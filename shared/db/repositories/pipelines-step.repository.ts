@@ -1,4 +1,4 @@
-import { and, asc, eq} from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 import { db } from "../index";
 import { pipelinesSteps, pipelines } from "../schema";
 
@@ -33,6 +33,29 @@ export const createPipelineStep = async (input: CreatePipelineStepInput) => {
         stepConfig: input.stepConfig
     }).returning();
     return step;
+}
+
+export const findStepByPipelineIdAndStepOrder = async (pipelineId: string, stepOrder: number) => {
+    return db.query.pipelinesSteps.findFirst({
+        where: and(
+            eq(pipelinesSteps.pipelineId, pipelineId),
+            eq(pipelinesSteps.stepOrder, stepOrder)
+        )
+    });
+}
+
+export const findStepByPipelineIdAndStepOrderExcludingStepId = async (
+    pipelineId: string,
+    stepOrder: number,
+    stepId: string
+) => {
+    return db.query.pipelinesSteps.findFirst({
+        where: and(
+            eq(pipelinesSteps.pipelineId, pipelineId),
+            eq(pipelinesSteps.stepOrder, stepOrder),
+            ne(pipelinesSteps.id, stepId)
+        )
+    });
 }
 
 export const findPipelineStepsByPipelineId = async (pipelineId: string) => {

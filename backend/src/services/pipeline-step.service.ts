@@ -11,6 +11,8 @@ import {
   createPipelineStep,
   deletePipelineStepById,
   findPipelineOwnedByUser,
+  findStepByPipelineIdAndStepOrder,
+  findStepByPipelineIdAndStepOrderExcludingStepId,
   findPipelineStepsByPipelineId,
   findStepByIdWithPipeline,
   updatePipelineStepById,
@@ -38,6 +40,17 @@ export const createPipelineStepService = async (
   validateStepOrder(input.stepOrder);
   validateStepType(input.stepType);
   validateStepConfigByType(input.stepType, input.stepConfig);
+
+  const existingStep = await findStepByPipelineIdAndStepOrder(
+    input.pipelineId,
+    input.stepOrder,
+  );
+  if (existingStep)
+    throw new AppError(
+      "stepOrder already exists in this pipeline",
+      "PIPELINE_STEP_ORDER_CONFLICT",
+      409,
+    );
 
   const step = await createPipelineStep({
     pipelineId: input.pipelineId,
@@ -77,6 +90,18 @@ export const updatePipelineStepService = async (
   validateStepOrder(input.stepOrder);
   validateStepType(input.stepType);
   validateStepConfigByType(input.stepType, input.stepConfig);
+
+  const conflictingStep = await findStepByPipelineIdAndStepOrderExcludingStepId(
+    step.pipelineId,
+    input.stepOrder,
+    input.stepId,
+  );
+  if (conflictingStep)
+    throw new AppError(
+      "stepOrder already exists in this pipeline",
+      "PIPELINE_STEP_ORDER_CONFLICT",
+      409,
+    );
 
   const updatedStep = await updatePipelineStepById(input.stepId, {
     stepOrder: input.stepOrder,

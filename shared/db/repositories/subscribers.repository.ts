@@ -27,6 +27,15 @@ export const createSubscriber = async (input: CreateSubscriberInput) => {
     return subscriber;
 }
 
+export const findSubscriberByPipelineIdAndUrl = async (pipelineId: string, url: string) => {
+    return db.query.subscribers.findFirst({
+        where: and(
+            eq(subscribers.pipelineId, pipelineId),
+            eq(subscribers.url, url)
+        )
+    });
+}
+
 export const findSubscribersByPipelineId = async (pipelineId: string) => {
     return db.query.subscribers.findMany({
         where: eq(subscribers.pipelineId, pipelineId),

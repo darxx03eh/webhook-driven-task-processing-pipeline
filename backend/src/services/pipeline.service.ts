@@ -5,6 +5,7 @@ import {
   createPipeline,
   deletePipelineByIdAndUserId,
   findPipelineByIdAndUserId,
+  findPipelineByName,
   findPipelinesByUserId,
 } from "../../../shared/db/repositories/pipelines.repository";
 
@@ -15,6 +16,15 @@ export const createPipelineService = async (input: CreatePipelineInput) => {
   const trimmedName = input.name.trim();
   if (!trimmedName)
     throw new AppError("pipeline name is required", "VALIDATION_ERROR", 400);
+
+  const existingPipeline = await findPipelineByName(trimmedName);
+  if (existingPipeline)
+    throw new AppError(
+      "Pipeline name already exists",
+      "PIPELINE_NAME_CONFLICT",
+      409,
+    );
+
   const pipeline = await createPipeline({
     userId: input.userId,
     name: trimmedName,

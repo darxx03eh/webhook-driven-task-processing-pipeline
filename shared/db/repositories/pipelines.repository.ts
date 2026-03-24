@@ -1,7 +1,6 @@
 import { and, desc, eq} from 'drizzle-orm';
 import { db } from '../index';
 import { pipelines } from '../schema';
-import { pipeline } from 'node:stream';
 
 
 type CreatePipelineInput = {
@@ -60,5 +59,11 @@ export const deletePipelineByIdAndUserId = async (pipelineId: string, userId: st
 export const findPipelineByWebhookPath = async (webhookPath: string) => {
     return db.query.pipelines.findFirst({
         where: eq(pipelines.webhookPath, webhookPath)
+    });
+}
+
+export const findPipelineByName = async (name: string) => {
+    return db.query.pipelines.findFirst({
+        where: eq(pipelines.name, name)
     });
 }

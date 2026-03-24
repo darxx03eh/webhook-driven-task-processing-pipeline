@@ -1,6 +1,6 @@
 import {
     pgTable, uuid, text, timestamp,
-    jsonb, integer
+    jsonb, integer, unique
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -15,20 +15,27 @@ export const pipelines = pgTable("pipelines", {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
+    name: text("name").notNull().unique(),
     webhookSecret: text("webhook_secret").notNull(),
     webhookPath: text("webhook_path").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow()
 });
 
-export const subscribers = pgTable("subscribers", {
-    id: uuid("id").primaryKey().defaultRandom(),
-    pipelineId: uuid("pipeline_id").notNull()
-    .references(() => pipelines.id, { onDelete: "cascade" }),
-    url: text("url").notNull(),
-    secret: text("secret"),
-    createdAt: timestamp("created_at").defaultNow()
-});
+export const subscribers = pgTable(
+    "subscribers",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        pipelineId: uuid("pipeline_id").notNull()
+        .references(() => pipelines.id, { onDelete: "cascade" }),
+        url: text("url").notNull(),
+        secret: text("secret"),
+        createdAt: timestamp("created_at").defaultNow()
+    },
+    (table) => ({
+        uniqueSubscriberUrlPerPipeline: unique("subscribers_pipeline_id_url_unique")
+        .on(table.pipelineId, table.url)
+    })
+);
 
 export const jobs = pgTable("jobs", {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -58,12 +65,19 @@ export const deliveryAttempts = pgTable("delivery_attempts", {
     createdAt: timestamp("created_at").defaultNow()
 });
 
-export const pipelinesSteps = pgTable("pipelines_steps", {
-    id: uuid("id").primaryKey().defaultRandom(),
-    pipelineId: uuid("pipeline_id").notNull()
-    .references(() => pipelines.id, { onDelete: "cascade" }),
-    stepOrder: integer("step_order").notNull(),
-    stepType: text("step_type").notNull(),
-    stepConfig: jsonb("step_config"),
-    createdAt: timestamp("created_at").defaultNow()
-});
+export const pipelinesSteps = pgTable(
+    "pipelines_steps",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        pipelineId: uuid("pipeline_id").notNull()
+        .references(() => pipelines.id, { onDelete: "cascade" }),
+        stepOrder: integer("step_order").notNull(),
+        stepType: text("step_type").notNull(),
+        stepConfig: jsonb("step_config"),
+        createdAt: timestamp("created_at").defaultNow()
+    },
+    (table) => ({
+        uniqueStepOrderPerPipeline: unique("pipelines_steps_pipeline_id_step_order_unique")
+        .on(table.pipelineId, table.stepOrder)
+    })
+);

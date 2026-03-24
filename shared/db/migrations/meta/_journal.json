@@ -50,6 +50,20 @@
       "when": 1774028913992,
       "tag": "0006_mushy_jubilee",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774356000000,
+      "tag": "0007_local_pipeline_validations",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774363200000,
+      "tag": "0008_pipeline_name_unique",
+      "breakpoints": true
     }
   ]
 }
